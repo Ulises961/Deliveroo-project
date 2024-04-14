@@ -3,8 +3,11 @@ import { calculatePath } from '../utils/utils.js';
 
 export default class GoPickUp extends Plan {
 
-    
+
     isApplicableTo ( desire ) {
+        if(desire === 'go_pick_up') {
+            return true;
+        }
     }
 
     async execute ( {x, y} ) {
@@ -22,7 +25,7 @@ export default class GoPickUp extends Plan {
             return false;
         }
 
-        await client.pickup();
+        return await client.pickup();
     }
 
 }
