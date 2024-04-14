@@ -18,7 +18,6 @@ export default class Agent {
     }
 
     async queue ( desire, ...args ) {
-        const last = this.intention_queue.at( this.intention_queue.length - 1 );
         const current = new Intention( desire, ...args )
         this.intention_queue.push( current );
     }

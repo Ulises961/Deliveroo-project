@@ -13,6 +13,17 @@ const client = new DeliverooApi(
  * Belief revision function
  */
 
+await new Promise (res => {
+    client.onYou( ( {id, name, x, y, score} ) => {
+        me.id = id
+        me.name = name
+        me.x = x
+        me.y = y
+        me.score = score
+        res()
+    } )
+}) 
+
 client.onYou( ( {id, name, x, y, score} ) => {
     me.id = id
     me.name = name
@@ -20,11 +31,7 @@ client.onYou( ( {id, name, x, y, score} ) => {
     me.y = y
     me.score = score
 } )
-client.onParcelsSensing( async ( perceived_parcels ) => {
-    for (const p of perceived_parcels) {
-        parcels.set( p.id, p)
-    }
-} );
+
 
 /**
  * BDI loop
@@ -32,35 +39,53 @@ client.onParcelsSensing( async ( perceived_parcels ) => {
 
 function agentLoop() {
     
+    /** 
+     * TODO: In the options we need to include the option of delivery, 
+     * of picking up other parcels, etc
+     * Desires: go_pick_up, go_deliver, go_to, communicate, etc
+    */
+
     /**
      * Options
-     */
+     */ 
     const options = [];
-    for(const parcel of parcels.values()) {
+    for(const [id,parcel] of parcels.entries()) {
         if ( ! parcel.carriedBy ) {
             // Pick up parcels worth picking up
             if ( distance( me, parcel ) < parcel.reward ) {
-                options.push(parcel);
+                options.push({
+                    desire: 'go_pick_up',
+                    args: [parcel]
+                });
             } 
         }
     }
 
     /**
+     * TODO: Refactor calculation of best option choosing from different
+     * types of options and desires 
+     */
+    /**
      * Select best intention
      */
-    const best_intention = myAgent.intention_queue.reduce( (best, current) => {
-        if ( current.score > best.score )
-            return current;
-        return best;
-    }, null);
-
+    let best_option = null;
+    let best_distance = Number.MAX_SAFE_INTEGER;
+    for (const option of options) {
+        if (desire !== 'go_pick_up') continue;
+        let parcel = option.args[0];
+        const distance = distance( me, parcel );
+        if ( distance < best_distance ) {
+            best_option = option;
+            best_distance = distance;
+        }
+    }
     
     /**
      * Revise/queue intention 
      */
 
-    if ( best_intention )
-        myAgent.queue( best_intention.desire, best_intention.args );
+    if ( best_option )
+        myAgent.queue( best_option.desire, ...best_option.args );
 
 }
 
@@ -73,23 +98,6 @@ client.onParcelsSensing( agentLoop )
 const myAgent = new Agent();
 myAgent.intentionLoop();
 
-// client.onYou( () => myAgent.queue( 'go_to', {x:11, y:6} ) )
-
-// client.onParcelsSensing( parcels => {
-//     for (const {x, y, carriedBy} of parcels) {
-//         if ( ! carriedBy )
-//             myAgent.queue( 'go_pick_up', {x, y} );
-//     }
-// } )
-
-
-
-
-
-/**
- * Plan library
- */
-const plans = [];
 
 plans.push( new GoPickUp() )
 plans.push( new BlindMove() )
