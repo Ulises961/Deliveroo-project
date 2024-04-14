@@ -1,17 +1,19 @@
+import Intention from './Intention.js';
 
 /**
  * Intention revision / execution loop
  */
-class Agent {
+export default class Agent {
 
     intention_queue = new Array();
 
     async intentionLoop ( ) {
         while ( true ) {
             const intention = this.intention_queue.shift();
-            if ( intention )
+            if ( intention ){
                 await intention.achieve();
-            await new Promise( res => setImmediate( res ) );
+                await new Promise( res => setImmediate( res ) );
+            }
         }
     }
 
