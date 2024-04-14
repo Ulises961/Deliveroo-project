@@ -1,3 +1,5 @@
+import { Plan } from '../models/Plan.js';
+
 /**
  * Calculates the distance between two points.
  * @param {Object} param0 The first point, with properties x and y.
@@ -47,8 +49,16 @@ const calculatePath = function calculatePath(start, end) {
     return path;
 };
 
+/**
+ * @type Map<number, {}>
+ */
 const parcels = new Map();
 
 const me = {};
 
-export { distance, calculatePath , parcels, me };
+/**
+ * @type array<Plan>
+ */
+const plans = [];
+
+export { distance, calculatePath , parcels, me, plans };
