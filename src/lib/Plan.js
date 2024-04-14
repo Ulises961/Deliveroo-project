@@ -2,11 +2,18 @@ import Intention from "./Intention";
 
 export default class Plan {
 
+    // This is used to stop the plan
+    #stopped = false;
+    
     stop () {
         console.log( 'stop plan and all sub intentions');
         for ( const i of this.#sub_intentions ) {
             i.stop();
         }
+    }
+
+    get stopped () {
+        return this.#stopped;
     }
 
     #sub_intentions = [];

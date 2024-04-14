@@ -1,9 +1,9 @@
 import Plan from './Plan.js';
 
-export default class BlindMove extends Plan {
+export default class GoTo extends Plan {
 
     isApplicableTo ( desire ) {
-        return desire === 'blind_move'
+        return desire === 'go_to'
 
     }
 
@@ -27,5 +27,7 @@ export default class BlindMove extends Plan {
         if(retries === 5) {
             return false;
         }
+        return true;
     }
+
 }
