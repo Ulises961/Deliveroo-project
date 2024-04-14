@@ -2,7 +2,7 @@ import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 import Agent from './lib/Agent.js';
 import GoPickUp from './lib/plans/GoPickUp.js';
 import BlindMove from './lib/plans/BlindMove.js';
-import {parcels, me} from "./lib/utils/utils.js";
+import {parcels, me, distance} from "./lib/utils/utils.js";
 
 const client = new DeliverooApi(
     'http://localhost:8080',
@@ -24,9 +24,7 @@ client.onParcelsSensing( async ( perceived_parcels ) => {
     for (const p of perceived_parcels) {
         parcels.set( p.id, p)
     }
-} )
-
-
+} );
 
 /**
  * BDI loop
@@ -37,13 +35,16 @@ function agentLoop() {
     /**
      * Options
      */
+    const options = [];
     for(const parcel of parcels.values()) {
         if ( ! parcel.carriedBy ) {
-            if ( distance( me, parcel ) < 5 ) {
-                myAgent.queue( 'go_pick_up', parcel);
+            // Pick up parcels worth picking up
+            if ( distance( me, parcel ) < parcel.reward ) {
+                options.push(parcel);
             } 
         }
     }
+
     /**
      * Select best intention
      */
@@ -51,13 +52,18 @@ function agentLoop() {
         if ( current.score > best.score )
             return current;
         return best;
-    },null);
+    }, null);
+
     
     /**
      * Revise/queue intention 
      */
 
+    if ( best_intention )
+        myAgent.queue( best_intention.desire, best_intention.args );
+
 }
+
 client.onParcelsSensing( agentLoop )
 // client.onAgentsSensing( agentLoop )
 // client.onYou( agentLoop )
