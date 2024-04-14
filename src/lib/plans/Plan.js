@@ -1,4 +1,4 @@
-import Intention from "./Intention";
+import Intention from "../intentions/Intention";
 
 export default class Plan {
 

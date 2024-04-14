@@ -1,5 +1,5 @@
 import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
-import Agent from './lib/Agent.js';
+import Agent from './lib/agents/Agent.js';
 import GoPickUp from './lib/plans/GoPickUp.js';
 import BlindMove from './lib/plans/BlindMove.js';
 import {parcels, me, distance} from "./lib/utils/utils.js";

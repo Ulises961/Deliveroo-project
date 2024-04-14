@@ -1,4 +1,4 @@
-import {plans} from './utils/utils.js';
+import {plans} from '../utils/utils.js';
 /**
  * Intention
  */

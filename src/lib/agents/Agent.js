@@ -1,4 +1,4 @@
-import Intention from './Intention.js';
+import Intention from '../intentions/Intention.js';
 
 /**
  * Intention revision / execution loop
