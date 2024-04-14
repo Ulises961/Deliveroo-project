@@ -1,4 +1,6 @@
-class Plan {
+import Intention from "./Intention";
+
+export default class Plan {
 
     stop () {
         console.log( 'stop plan and all sub intentions');
