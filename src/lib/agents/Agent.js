@@ -1,5 +1,5 @@
 import Intention from '../intentions/Intention.js';
-
+import { parcels } from '../utils/utils.js';
 /**
  * Intention revision / execution loop
  */
@@ -9,7 +9,7 @@ export default class Agent {
     async push ( predicate ) {
         
         // Check if already queued
-        if ( this.intention_queue.find( (i) => i.predicate.join(' ') == predicate.join(' ') ) )
+        if ( this.intention_queue.find( (i) => i.args.join(' ') === predicate.args.join(' ') && i.desire === predicate.desire ) )
             return; // intention is already queued
 
         console.log( 'IntentionRevisionReplace.push', predicate );
@@ -33,6 +33,10 @@ export default class Agent {
                 const intention = this.intention_queue[0];
                 
                 // Is queued intention still valid? Do I still want to achieve it?
+                // TODO: Reasons to drop an intention:
+                // - A new intention has a higher priority -> postpone
+                // - The intention is no longer valid -> drop
+                
                 // TODO this hard-coded implementation is an example
                 let id = intention.predicate[2]
                 let p = parcels.get(id)

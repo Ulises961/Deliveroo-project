@@ -1,5 +1,5 @@
 import Plan from './Plan.js';
-
+import client from '../utils/client.js';
 export default class BlindMove extends Plan {
 
     isApplicableTo ( desire ) {

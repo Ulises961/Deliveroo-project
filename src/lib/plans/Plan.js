@@ -1,4 +1,4 @@
-import Intention from "../intentions/Intention";
+import Intention from "../intentions/Intention.js";
 
 export default class Plan {
 

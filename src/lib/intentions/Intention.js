@@ -4,6 +4,8 @@ import {plans} from '../utils/utils.js';
  */
 export default class Intention extends Promise {
 
+    #resolve;
+    #reject;
 
     // Plan currently used for achieving the intention 
     #current_plan;
@@ -20,24 +22,30 @@ export default class Intention extends Promise {
             this.#current_plan.stop();
     }
 
-    get parent(){
-        return this.#parent;
-    }
-
+    
     /**
      * #parent refers to caller
-     */
-    #parent;
+    */
+   #parent;
+   get parent(){
+       return this.#parent;
+   }
 
     /**
      * predicate is in the form ['go_to', x, y]
-     */
+    */
+    #predicate;
     get predicate () {
         return this.#predicate;
     }
-    #predicate;
 
     constructor ( parent, predicate ) {
+        var resolve, reject;
+        super( async (res, rej) => {
+            resolve = res; reject = rej;
+        } )
+        this.#resolve = resolve
+        this.#reject = reject
         this.#parent = parent;
         this.#predicate = predicate;
     }
@@ -61,7 +69,7 @@ export default class Intention extends Promise {
             this.#started = true;
 
         // Trying all plans in the library
-        for (const planClass of planLibrary) {
+        for (const planClass of plans) {
 
             // if stopped then quit
             if ( this.stopped ) throw [ 'stopped intention', ...this.predicate ];

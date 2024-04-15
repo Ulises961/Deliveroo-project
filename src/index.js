@@ -1,13 +1,8 @@
-import { DeliverooApi } from "@unitn-asa/deliveroo-js-client";
 import Agent from './lib/agents/Agent.js';
 import GoPickUp from './lib/plans/GoPickUp.js';
 import BlindMove from './lib/plans/BlindMove.js';
-import {parcels, me, distance} from "./lib/utils/utils.js";
-
-const client = new DeliverooApi(
-    'http://localhost:8080',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjA5ZmQ2NDllNzZlIiwibmFtZSI6Im1hcmNvIiwiaWF0IjoxNjc5OTk3Njg2fQ.6_zmgL_C_9QgoOX923ESvrv2i2_1bgL_cWjMw4M7ah4'
-)
+import {parcels, me, distance, plans} from "./lib/utils/utils.js";
+import client from './lib/utils/client.js';
 
 /**
  * Belief revision function
@@ -37,8 +32,8 @@ client.onYou( ( {id, name, x, y, score} ) => {
  * BDI loop
  */
 
-function agentLoop() {
-    
+function agentLoop(parcels) {
+    console.log( 'agentLoop',parcels);
     /** 
      * TODO: In the options we need to include the option of delivery, 
      * of picking up other parcels, etc
@@ -71,12 +66,12 @@ function agentLoop() {
     let best_option = null;
     let best_distance = Number.MAX_SAFE_INTEGER;
     for (const option of options) {
-        if (desire !== 'go_pick_up') continue;
+        if (option.desire !== 'go_pick_up') continue;
         let parcel = option.args[0];
-        const distance = distance( me, parcel );
-        if ( distance < best_distance ) {
+        const distanceToTarget = distance( me, parcel );
+        if ( distanceToTarget < best_distance ) {
             best_option = option;
-            best_distance = distance;
+            best_distance = distanceToTarget;
         }
     }
     
@@ -85,7 +80,7 @@ function agentLoop() {
      */
 
     if ( best_option )
-        myAgent.queue( best_option.desire, ...best_option.args );
+        myAgent.push( {desire: best_option.desire, args: [...best_option.args]} );
 
 }
 
@@ -96,8 +91,8 @@ client.onParcelsSensing( agentLoop )
 
 
 const myAgent = new Agent();
-myAgent.intentionLoop();
+myAgent.loop();
 
 
-plans.push( new GoPickUp() )
-plans.push( new BlindMove() )
+plans.push( new GoPickUp())
+plans.push( new BlindMove())

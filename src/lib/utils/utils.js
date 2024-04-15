@@ -1,4 +1,4 @@
-import { Plan } from '../models/Plan.js';
+import Plan  from '../plans/Plan.js';
 
 /**
  * Calculates the distance between two points.

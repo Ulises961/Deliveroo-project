@@ -1,5 +1,5 @@
 import Plan from './Plan.js';
-import { calculatePath } from '../utils/utils.js';
+import client from '../utils/client.js';
 
 export default class GoPickUp extends Plan {
 
