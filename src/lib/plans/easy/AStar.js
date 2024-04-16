@@ -1,58 +1,99 @@
 import Plan from '../Plan.js';
-import { me } from '../../utils/utils.js';
+import { me, map, euclideanDistance } from '../../utils/utils.js';
 import client from '../../utils/client.js';
 
-class MoveTo extends Plan {
-
+export default class AStar extends Plan {
     constructor() {
         super('a_star');
     }
 
-    isApplicableTo(go_to, x, y) {
-        return go_to == 'a_star';
+    isApplicableTo(desire) {
+        return desire == 'a_star';
     }
 
-    async execute(go_to, x, y, id) {
-        console.log('Executing MoveTo')
-        while (me.x != x || me.y != y) {
-            if (this.stopped)
-                throw ['stopped']; // if stopped then quit
-
-            let status_x = false;
-            let status_y = false;
-
-            if (x > me.x)
-                status_x = await client.move('right')
-            else if (x < me.x)
-                status_x = await client.move('left')
-
-            if (status_x) {
-                me.x = status_x.x;
-                me.y = status_x.y;
-            }
-
-            if (this.stopped)
-                throw ['stopped']; // if stopped then quit
-
-            if (y > me.y)
-                status_y = await client.move('up')
-            else if (y < me.y)
-                status_y = await client.move('down')
-
-            if (status_y) {
-                me.x = status_y.x;
-                me.y = status_y.y;
-            }
-
-            if (!status_x && !status_y) {
-                this.log('stuck');
-                throw 'stuck';
-            } else if (me.x == x && me.y == y) {
-                // this.log('target reached');
-            }
+    /**
+     * Get the neighbours of a cell
+     * @param {Cell} cell
+     * @returns {Cell[]} - The neighbours of the cell
+     */
+    getNeighbours(cell) {
+        let neighbours = []
+        // Sometimes the map is not loaded yet
+        if (map.length == 0)
+            return []
+        if (cell.x > 0 && !map[cell.x - 1][cell.y].fakeFloor) {
+            neighbours.push(new Cell(cell.x - 1, cell.y))
         }
-        return true;
+        if (cell.x < map.length - 1 && !map[cell.x + 1][cell.y].fakeFloor) {
+            neighbours.push(new Cell(cell.x + 1, cell.y))
+        }
+        if (cell.y > 0 && !map[cell.x][cell.y - 1].fakeFloor) {
+            neighbours.push(new Cell(cell.x, cell.y - 1))
+        }
+        if (cell.y < map[0].length - 1 && !map[cell.x][cell.y + 1].fakeFloor) {
+            neighbours.push(new Cell(cell.x, cell.y + 1))
+        }
+        return neighbours
+    }
+
+    /**
+     * Reconstruct the path from the cameFrom map
+     */
+    reconstructPath(cameFrom, current) {
+        let totalPath = [current]
+        while (cameFrom.has(current)) {
+            current = cameFrom.get(current)
+            totalPath.unshift(current)
+        }
+        return totalPath
+    }
+
+    /**
+     * Execute the A* algorithm
+     * @param {number} x - The x coordinate of the destination
+     * @param {number} y - The y coordinate of the destination
+     */
+    async execute(x, y) {
+        let queue = [new Cell(x, y)]
+        let cameFrom = new Map()
+
+        let gScore = new Map()
+        gScore.set(queue[0], 0)
+
+        let fScore = new Map()
+        fScore.set(queue[0], euclideanDistance(queue[0], new Cell(me.x, me.y)))
+
+        const MAX_SIZE = 20
+        while (queue.length > 0 && queue.length < MAX_SIZE) {
+            let current = queue[0]
+            if (current.x == me.x && current.y == me.y) {
+                return this.reconstructPath(cameFrom, current)
+            }
+
+            queue = queue.slice(1)
+
+            for (let neighbour of this.getNeighbours(current)) {
+                let tentativeGScore = gScore.get(current) + 1
+
+                if (tentativeGScore < (gScore.get(neighbour) || Number.MAX_VALUE)) {
+                    cameFrom.set(neighbour, current)
+                    gScore.set(neighbour, tentativeGScore)
+                    fScore.set(neighbour, gScore.get(neighbour) + euclideanDistance(neighbour, new Cell(me.x, me.y)))
+
+                    if (!queue.includes(neighbour)) {
+                        queue.push(neighbour)
+                    }
+                }
+            }
+            queue.sort((a, b) => fScore.get(a) - fScore.get(b))
+        }
+        return []
     }
 }
 
-export { MoveTo };
+class Cell {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+}

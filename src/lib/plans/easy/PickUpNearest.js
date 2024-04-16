@@ -15,11 +15,18 @@ export default class PickUpNearest extends Plan {
 
     async execute(predicate) {
         console.log('PickUpNearest.execute: predicate ', predicate, ' me ', me);
-        if (this.stopped) throw ['stopped']; // if stopped then quit
-        await this.subIntention('go_to', [predicate.x, predicate.y]);
-        if (this.stopped) throw ['stopped']; // if stopped then quit
-        await client.pickup()
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        let completed = false
+        while (!completed) {
+            if (this.stopped) 
+                throw ['stopped']; // if stopped then quit
+            let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
+            path = path.reverse();
+            path.shift();
+            if (this.stopped) throw ['stopped']; // if stopped then quit
+            completed = await this.subIntention('follow_path', [path]);
+            await client.pickup()
+            if (this.stopped) throw ['stopped']; // if stopped then quit
+        }
         return true;
     }
 }
