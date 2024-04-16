@@ -6,7 +6,7 @@ state of the environment, including other game participants, strategy chosen and
 ## How to use
 
 ### Requirements 
-To run it requires a running environment of the game [link: https://deliveroojs.onrender.com]
+To run it requires a running environment of the [Deliveroo game](https://deliveroojs.onrender.com)
 
 ### Instructions
 * Clone this repository
