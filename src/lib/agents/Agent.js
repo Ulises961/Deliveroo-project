@@ -3,18 +3,24 @@ import { parcels } from '../utils/utils.js';
 /**
  * Intention revision / execution loop
  */
-export default class Agent {
+class Agent {
 
     intention_queue = new Array();
     async push ( option ) {
         
         // Check if already queued
+        const last = this.intention_queue.at(this.intention_queue.length - 1);
         if ( this.intention_queue.find( (i) => i.predicate.join(' ') === option.args.join(' ') && i.parent === option.desire ) )
             return; // intention is already queued
 
         console.log( 'Agent.push', option.args );
         const intention = new Intention( option.desire, option.args );
         this.intention_queue.push( intention );
+
+        if (last) {
+            last.stop();
+            console.log('STOPPING LAST INTENTION')
+        }
     }
 
 
@@ -49,7 +55,8 @@ export default class Agent {
                 await intention.achieve()
                 // Catch eventual error and continue
                 .catch( error => {
-                    // console.log( 'Failed intention', ...intention.predicate, 'with error:', ...error )
+                    console.log(error)
+                    console.log( 'Failed intention', ...intention.predicate, 'with error:', ...error )
                 } );
 
                 // Remove from the queue
@@ -65,5 +72,6 @@ export default class Agent {
     log ( ...args ) {
         console.log( ...args )
     }
-
 }
+
+export default Agent;
