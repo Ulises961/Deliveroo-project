@@ -88,6 +88,7 @@ export default class Intention extends Promise {
                     return plan_res
                 // or errors are caught so to continue with next plan
                 } catch (error) {
+                    console.log(error)
                     this.log( 'failed intention', ...this.predicate,'with plan', planClass.name, 'with error:', ...error );
                 }
             }

@@ -1,6 +1,6 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { MAX_NUM_MOVEMENT_RETRIES } from '../utils/utils.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { MAX_NUM_MOVEMENT_RETRIES } from '../../utils/utils.js';
 
 export default class GoTo extends Plan {
 
