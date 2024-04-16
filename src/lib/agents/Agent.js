@@ -6,14 +6,14 @@ import { parcels } from '../utils/utils.js';
 export default class Agent {
 
     intention_queue = new Array();
-    async push ( predicate ) {
+    async push ( option ) {
         
         // Check if already queued
-        if ( this.intention_queue.find( (i) => i.args.join(' ') === predicate.args.join(' ') && i.desire === predicate.desire ) )
+        if ( this.intention_queue.find( (i) => i.predicate.join(' ') === option.args.join(' ') && i.parent === option.desire ) )
             return; // intention is already queued
 
-        console.log( 'IntentionRevisionReplace.push', predicate );
-        const intention = new Intention( this, predicate );
+        console.log( 'Agent.push', option.args );
+        const intention = new Intention( option.desire, option.args );
         this.intention_queue.push( intention );
     }
 
@@ -27,7 +27,7 @@ export default class Agent {
         while ( true ) {
             // Consumes intention_queue if not empty
             if ( this.intention_queue.length > 0 ) {
-                console.log( 'intentionRevision.loop', this.intention_queue.map(i=>i.predicate) );
+                console.log( 'Agent.loop', this.intention_queue.map(i=>i.parent.name) );
             
                 // Current intention
                 const intention = this.intention_queue[0];
@@ -38,10 +38,10 @@ export default class Agent {
                 // - The intention is no longer valid -> drop
                 
                 // TODO this hard-coded implementation is an example
-                let id = intention.predicate[2]
+                let id = intention.predicate.id;
                 let p = parcels.get(id)
                 if ( p && p.carriedBy ) {
-                    console.log( 'Skipping intention because no more valid', intention.predicate )
+                    console.log( 'Skipping intention because no more valid', intention.predicate.desire )
                     continue;
                 }
 

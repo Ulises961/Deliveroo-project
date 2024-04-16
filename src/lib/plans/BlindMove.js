@@ -1,13 +1,17 @@
 import Plan from './Plan.js';
 import client from '../utils/client.js';
 export default class BlindMove extends Plan {
+    
+    constructor() {
+        super('blind_move');
+    }
 
     isApplicableTo ( desire ) {
         return desire === 'blind_move'
 
     }
 
-    async execute ( {x, y} ) {
+    async execute ( path ) {
         while(path.length > 0 && retries < 5) {
             
             if ( this.stopped ) throw ['stopped']; // if stopped then quit

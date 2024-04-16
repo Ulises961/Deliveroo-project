@@ -23,8 +23,9 @@ const calculatePath = function calculatePath(start, end) {
     if (!start || !end) return [];
     console.log('Calculating path from', start.x, start.y, 'to', end.x, end.y);
     const path = [];
-    let current = start;
-    while (current.x !== end.x) {
+    let current = {...start};
+    let counter = 0;
+    while (current.x !== end.x && counter < 20) {
         console.log('Current', current.x, current.y, 'End', end.x, end.y);
         if (current.x < end.x) {
             path.push('right');
@@ -33,9 +34,10 @@ const calculatePath = function calculatePath(start, end) {
             path.push('left');
             current = { x: current.x - 1, y: current.y };
         }
+        counter++;
     }
-
-    while (current.y !== end.y) {
+    counter = 0;
+    while (current.y !== end.y && counter < 20) {
         console.log('Current', current.x, current.y, 'End', end.x, end.y);
         if (current.y < end.y) {
             
@@ -45,6 +47,7 @@ const calculatePath = function calculatePath(start, end) {
             path.push('down');
             current = { x: current.x, y: current.y - 1 };
         }
+        counter++;
     }
     return path;
 };
@@ -60,5 +63,6 @@ const me = {};
  * @type array<Plan>
  */
 const plans = [];
+const MAX_NUM_MOVEMENT_RETRIES = 5; 
 
-export { distance, calculatePath , parcels, me, plans };
+export { distance, calculatePath , parcels, me, plans, MAX_NUM_MOVEMENT_RETRIES };

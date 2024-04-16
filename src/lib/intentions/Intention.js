@@ -32,7 +32,7 @@ export default class Intention extends Promise {
    }
 
     /**
-     * predicate is in the form ['go_to', x, y]
+     * predicate is in the form {desire, parcel}
     */
     #predicate;
     get predicate () {
@@ -67,17 +67,19 @@ export default class Intention extends Promise {
             return this;
         else
             this.#started = true;
-
+        console.log( 'Intention.achieve', this.parent, ...this.predicate);
         // Trying all plans in the library
         for (const planClass of plans) {
+            console.log( 'Intention.plans', planClass.name, this.predicate, planClass.isApplicableTo( this.parent ) );
 
             // if stopped then quit
             if ( this.stopped ) throw [ 'stopped intention', ...this.predicate ];
 
             // if plan is 'statically' applicable
-            if ( planClass.isApplicableTo( ...this.predicate ) ) {
+            if ( planClass.isApplicableTo( this.parent ) ) {
+
                 // plan is instantiated
-                this.#current_plan = new planClass(this.parent);
+                this.#current_plan = planClass;
                 this.log('achieving intention', ...this.predicate, 'with plan', planClass.name);
                 // and plan is executed and result returned
                 try {

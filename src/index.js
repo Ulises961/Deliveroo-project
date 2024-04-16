@@ -3,6 +3,7 @@ import GoPickUp from './lib/plans/GoPickUp.js';
 import BlindMove from './lib/plans/BlindMove.js';
 import {parcels, me, distance, plans} from "./lib/utils/utils.js";
 import client from './lib/utils/client.js';
+import GoTo from './lib/plans/GoTo.js';
 
 /**
  * Belief revision function
@@ -33,7 +34,7 @@ client.onYou( ( {id, name, x, y, score} ) => {
  */
 
 function agentLoop(parcels) {
-    console.log( 'agentLoop',parcels);
+    console.log( 'index.agentLoop',parcels);
     /** 
      * TODO: In the options we need to include the option of delivery, 
      * of picking up other parcels, etc
@@ -80,7 +81,7 @@ function agentLoop(parcels) {
      */
 
     if ( best_option )
-        myAgent.push( {desire: best_option.desire, args: [...best_option.args]} );
+        myAgent.push( {desire: best_option.desire, args: best_option.args} );
 
 }
 
@@ -96,3 +97,4 @@ myAgent.loop();
 
 plans.push( new GoPickUp())
 plans.push( new BlindMove())
+plans.push( new GoTo())
