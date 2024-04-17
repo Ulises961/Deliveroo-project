@@ -13,6 +13,16 @@ const distance = function distance( {x:x1, y:y1}, {x:x2, y:y2}) {
 }
 
 /**
+ * Calculates the Euclidean distance between two points.
+ * @param {Object} param0 The first point, with properties x and y.
+ * @param {Object} param1 The second point, with properties x and y.
+ * @returns {number} The distance between the two points.
+ */
+const euclideanDistance = function distance( {x:x1, y:y1}, {x:x2, y:y2}) {
+    return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+}
+
+/**
  * Calculates the path from the start point to the end point.
  *
  * @param {Object} start - The start point coordinates.
@@ -60,9 +70,14 @@ const parcels = new Map();
 const me = {};
 
 /**
+ * @type {[{x: number, y: number, delivery: boolean}]}
+ */
+const map = [[]]
+
+/**
  * @type array<Plan>
  */
 const plans = [];
 const MAX_NUM_MOVEMENT_RETRIES = 5; 
 
-export { distance, calculatePath , parcels, me, plans, MAX_NUM_MOVEMENT_RETRIES };
+export { distance, calculatePath , parcels, me, plans, MAX_NUM_MOVEMENT_RETRIES, euclideanDistance, map };
