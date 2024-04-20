@@ -1,20 +1,20 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
 import {me} from '../../utils/utils.js';
+import logger from '../../utils/logger.js';
 
 export default class PickUpNearest extends Plan {
 
     constructor() {
-        super('go_pick_up');
+        super('pick_up_nearest');
     }
 
     isApplicableTo(desire) {
-        console.log('PickUpNearest');
-        return desire == 'go_pick_up';
+        return desire == 'pick_up_nearest';
     }
 
     async execute(predicate) {
-        console.log('PickUpNearest.execute: predicate ', predicate, ' me ', me);
+        logger.debug('PickUpNearest.execute: predicate ', predicate, ' me ', me);
         let completed = false
         while (!completed) {
             if (this.stopped) 

@@ -1,14 +1,14 @@
-import Plan  from '../plans/Plan.js';
-
+import Plan from '../plans/Plan.js';
+import client from './client.js';
 /**
  * Calculates the distance between two points.
  * @param {Object} param0 The first point, with properties x and y.
  * @param {Object} param1 The second point, with properties x and y.
  * @returns {number} The distance between the two points.
  */
-const distance = function distance( {x:x1, y:y1}, {x:x2, y:y2}) {
-    const dx = Math.abs( Math.round(x1) - Math.round(x2) )
-    const dy = Math.abs( Math.round(y1) - Math.round(y2) )
+const distance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) {
+    const dx = Math.abs(Math.round(x1) - Math.round(x2))
+    const dy = Math.abs(Math.round(y1) - Math.round(y2))
     return dx + dy;
 }
 
@@ -18,50 +18,23 @@ const distance = function distance( {x:x1, y:y1}, {x:x2, y:y2}) {
  * @param {Object} param1 The second point, with properties x and y.
  * @returns {number} The distance between the two points.
  */
-const euclideanDistance = function distance( {x:x1, y:y1}, {x:x2, y:y2}) {
+const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
-/**
- * Calculates the path from the start point to the end point.
- *
- * @param {Object} start - The start point coordinates.
- * @param {Object} end - The end point coordinates.
- * @returns {string[]} - The path as an array of directions.
- */
-const calculatePath = function calculatePath(start, end) {
-    if (!start || !end) return [];
-    console.log('Calculating path from', start.x, start.y, 'to', end.x, end.y);
-    const path = [];
-    let current = {...start};
-    let counter = 0;
-    while (current.x !== end.x && counter < 20) {
-        console.log('Current', current.x, current.y, 'End', end.x, end.y);
-        if (current.x < end.x) {
-            path.push('right');
-            current = { x: current.x + 1, y: current.y };
-        } else {
-            path.push('left');
-            current = { x: current.x - 1, y: current.y };
+const findClosestDelivery = function findClosestDelivery() {
+    let closestDelivery = { point: null, distance: Infinity };
+    deliveryPoints.reduce((acc, point) => {
+        const dist = distance(me, point);
+        if (dist < acc.distance) {
+            acc.distance = dist;
+            acc.point = point;
         }
-        counter++;
-    }
-    counter = 0;
-    while (current.y !== end.y && counter < 20) {
-        console.log('Current', current.x, current.y, 'End', end.x, end.y);
-        if (current.y < end.y) {
-            
-            path.push('up');
-            current = { x: current.x, y: current.y + 1 };
-        } else {
-            path.push('down');
-            current = { x: current.x, y: current.y - 1 };
-        }
-        counter++;
-    }
-    return path;
-};
-
+        return acc;
+    }, closestDelivery);
+    return closestDelivery;
+}
+const validCells = [];
 /**
  * @type Map<number, {}>
  */
@@ -74,10 +47,28 @@ const me = {};
  */
 const map = [[]]
 
+const deliveryPoints = map.filter(cell => cell.delivery);
 /**
  * @type array<Plan>
  */
 const plans = [];
-const MAX_NUM_MOVEMENT_RETRIES = 5; 
+const MAX_NUM_MOVEMENT_RETRIES = 5;
+const updateMe = async function updateMe() {
+    return await new Promise(res => {
+        client.onYou(({ id, name, x, y, score }) => {
+            me.id = id
+            me.name = name
+            me.x = x
+            me.y = y
+            me.score = score
+            console.log('utils.updateMe', me)
+            res(me);
+        });
+    })
+};
 
-export { distance, calculatePath , parcels, me, plans, MAX_NUM_MOVEMENT_RETRIES, euclideanDistance, map };
+export {
+    distance,
+    updateMe,
+    findClosestDelivery, validCells, parcels, me, plans, MAX_NUM_MOVEMENT_RETRIES, euclideanDistance, map, deliveryPoints
+};

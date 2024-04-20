@@ -1,6 +1,6 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { calculatePath, me } from '../../utils/utils.js';
+import { distance, me, deliveryPoints, parcels } from '../../utils/utils.js';
 
 export default class GoPickUp extends Plan {
 
@@ -14,10 +14,20 @@ export default class GoPickUp extends Plan {
 
     async execute ( predicate ) {
         console.log('GoPickUp.execute: predicate ', predicate, ' me ', me);
-        const path = calculatePath({x:me.x, y:me.y}, {x:predicate.x, y:predicate.y});
-        console.log('GoPickUp.execute: path', path);
-        await this.subIntention('go_to', [path]);
-        return await client.pickup();
+        
+        let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
+        path = path.reverse();
+        path.shift();
+       
+        await this.subIntention('follow_path', [path]);
+        await client.pickup();
+        
+        if (this.stopped) throw ['stopped']; // if stopped then quit
+        
+        await this.subIntention('go_deliver', []);
+
+
+        return true;
     }
 
 }

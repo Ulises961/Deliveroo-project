@@ -1,53 +1,73 @@
+
+import { parcels, distance, me } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
-import { distance, me } from '../../utils/utils.js';
 
-export function parcelsLoop(parcels) {
-    console.log('index.agentLoop', parcels);
-    /** 
-     * TODO: In the options we need to include the option of delivery, 
-     * of picking up other parcels, etc
-     * Desires: go_pick_up, go_deliver, go_to, communicate, etc
-    */
-
+/**
+ * Options generation and filtering function
+ */
+export function parcelsLoop(new_parcels) {
     /**
-     * Options
+    * If there are no new parcels, stop reconsidering
+    */
+    let new_parcel = false;
+    for (const p of new_parcels) {
+        if (!parcels.has(p.id)) {
+            new_parcel = true;
+        }
+        parcels.set(p.id, p)
+    }
+    if (!new_parcel)
+        return;
+    // parcels.clear()
+    // for (const p of new_parcels) {
+    //     parcels.set(p.id, p)
+    // }
+
+    chooseBestOption()
+}
+
+function findBestOption(options) {
+    /**
+     * Options filtering
      */
-    const options = [];
-    for (const [id, parcel] of parcels.entries()) {
-        if (!parcel.carriedBy) {
-            // Pick up parcels worth picking up
-            if (distance(me, parcel) < parcel.reward) {
-                options.push({
-                    desire: 'go_pick_up',
-                    args: [parcel]
-                });
+    let best_option;
+    let nearest = Number.MAX_VALUE;
+    for (const option of options.values()) {
+        if (option.desire == 'go_pick_up') {
+            let current_d = distance(option.args[0], me)
+            console.log(current_d)
+            if (current_d < nearest && current_d < option.args[0].reward) {
+                best_option = option
+                nearest = current_d
             }
         }
     }
+    return best_option
+}
 
+function chooseBestOption() {
     /**
-     * TODO: Refactor calculation of best option choosing from different
-     * types of options and desires 
-     */
-    /**
-     * Select best intention
-     */
-    let best_option = null;
-    let best_distance = Number.MAX_SAFE_INTEGER;
-    for (const option of options) {
-        if (option.desire !== 'go_pick_up') continue;
-        let parcel = option.args[0];
-        const distanceToTarget = distance(me, parcel);
-        if (distanceToTarget < best_distance) {
-            best_option = option;
-            best_distance = distanceToTarget;
+    * Options generation
+    */
+    const options = new Map();
+    for (const [id,parcel] of parcels.entries()) {
+        if (!parcel.carriedBy) {
+            options.set(id,{
+                desire: 'go_pick_up',
+                args: [parcel]
+            });
         }
     }
 
+    let best_option = findBestOption(options)
+    if(!options.size !== 0 && best_option?.args)
+        options.delete(best_option.args[0].id);
     /**
-     * Revise/queue intention 
+     * Best option is selected
      */
-
+    console.log('best_option', best_option)
     if (best_option)
-        agent.push({ desire: best_option.desire, args: best_option.args });
+        agent.push({ desire: best_option.desire, args: best_option.args })
+    else
+        agent.push({desire: 'go_random', args: []})
 }
