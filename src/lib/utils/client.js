@@ -5,7 +5,7 @@ import os from 'os';
 dotenv.config();
 
 const client = new DeliverooApi(
-    'http://localhost:8080',
+    process.env.URL || `http://localhost:8080`,
     process.env.TOKEN,
 );
 export default client;
