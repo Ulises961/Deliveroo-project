@@ -1,5 +1,5 @@
 import Plan from '../Plan.js';
-import client from '../../utils/client.js';
+import { validCells } from '../../utils/utils.js';
 
 export default class RandomMove extends Plan {
 
@@ -11,17 +11,24 @@ export default class RandomMove extends Plan {
         return go_random == 'go_random';
     }
 
-    async execute(go_random) {
+    async execute(predicate) {
         console.log('Executing RandomMove')
-        let moves = 10
-        while (moves > 0) {
-            if (this.stopped) throw ['stopped']; // if stopped then quit
-            const directions = ['up', 'down', 'left', 'right'];
-            const direction = directions[Math.floor(Math.random() * directions.length)];
-            await client.move(direction);
-            moves -= 1
-        }
+     
         if (this.stopped) throw ['stopped']; // if stopped then quit
-        return true;
+        let index = Math.floor(Math.random() * validCells.length);
+        let destination = validCells[index];
+        console.log('RandomMove: destination', destination, index);
+        let path = await this.subIntention('a_star', [destination.x, destination.y]);
+        path.reverse();
+        path.shift();
+
+        if (this.stopped) throw ['stopped']; // if stopped then quit
+        
+        const complete = await this.subIntention('follow_path', [path]);
+        if (complete) {
+            return true;
+        } else {
+            throw ['path not completed'];
+        }
     }
 }

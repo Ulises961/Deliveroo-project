@@ -1,17 +1,14 @@
-import Agent from './lib/agents/Agent.js';
-import GoPickUp from './lib/plans/other/GoPickUp.js';
-import BlindMove from './lib/plans/other/BlindMove.js';
-import {parcels, me, distance, plans, map} from "./lib/utils/utils.js";
+import {map, deliveryPoints, validCells, updateMe} from "./lib/utils/utils.js";
 import {agent} from "./lib/utils/agent.js";
 import client from './lib/utils/client.js';
-import GoTo from './lib/plans/other/GoTo.js';
+import { parcelsLoop } from './lib/plans/other/AgentLoop.js'
+import './lib/plans/other/Library.js'
 
 /**
  * Belief revision function
  */
 
 client.onMap((w, h, newMap) => {
-    console.log('MAP RECEIVED', newMap)
     for (let i = 0; i < w; i++) {
         map[i] = []
         for (let j = 0; j < h; j++) {
@@ -24,37 +21,29 @@ client.onMap((w, h, newMap) => {
         map[tile.x][tile.y].fakeFloor = false
     })
 
-    console.log(map)
+    newMap.forEach(tile => {
+        if (tile.delivery) {
+            deliveryPoints.push({x: tile.x, y: tile.y})
+        }
+    });
+
+    newMap.forEach(tile => {
+        if (!tile.fakeFloor){
+            validCells.push(tile)
+        }
+    });
 })
 
-await new Promise (res => {
-    client.onYou( ( {id, name, x, y, score} ) => {
-        me.id = id
-        me.name = name
-        me.x = x
-        me.y = y
-        me.score = score
-        res()
-    } )
-}) 
+await updateMe();
 
-client.onYou( ( {id, name, x, y, score} ) => {
-    me.id = id
-    me.name = name
-    me.x = x
-    me.y = y
-    me.score = score
-} )
 
 
 /**
  * BDI loop
  */
 
-import { parcelsLoop } from './lib/plans/easy/AgentLoop.js'
 
 client.onParcelsSensing( parcelsLoop )
 
 agent.loop();
 
-import './lib/plans/easy/Library.js'

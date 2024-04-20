@@ -1,4 +1,4 @@
-import {plans} from '../utils/utils.js';
+import {plans, updateMe} from '../utils/utils.js';
 /**
  * Intention
  */
@@ -70,7 +70,7 @@ export default class Intention extends Promise {
         console.log( 'Intention.achieve', this.parent, ...this.predicate);
         // Trying all plans in the library
         for (const planClass of plans) {
-            console.log( 'Intention.plans', planClass.name, this.predicate, planClass.isApplicableTo( this.parent ) );
+            // console.log( 'Intention.plans', planClass.name, this.predicate, planClass.isApplicableTo( this.parent ) );
 
             // if stopped then quit
             if ( this.stopped ) throw [ 'stopped intention', ...this.predicate ];
@@ -85,11 +85,14 @@ export default class Intention extends Promise {
                 try {
                     const plan_res = await this.#current_plan.execute( ...this.predicate );
                     this.log( 'succesful intention', ...this.predicate, 'with plan', planClass.name, 'with result:', plan_res );
+                    updateMe();
+                    console.log("--------------------------------------------------------------------------------------\n\n\n\n");
                     return plan_res
                 // or errors are caught so to continue with next plan
                 } catch (error) {
                     console.log(error)
                     this.log( 'failed intention', ...this.predicate,'with plan', planClass.name, 'with error:', ...error );
+                    return false;
                 }
             }
 

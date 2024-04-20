@@ -17,10 +17,10 @@ class Agent {
         const intention = new Intention( option.desire, option.args );
         this.intention_queue.push( intention );
 
-        if (last) {
-            last.stop();
-            console.log('STOPPING LAST INTENTION')
-        }
+        // if (last) {
+        //     last.stop();
+        //     console.log('STOPPING LAST INTENTION')
+        // }
     }
 
 
@@ -29,11 +29,16 @@ class Agent {
         return this.#intention_queue;
     }
 
+    emptyIntentions () {
+        return this.#intention_queue = new Array();
+    }
+
     async loop ( ) {
+        this.emptyIntentions(); // Empty intentions queue
         while ( true ) {
             // Consumes intention_queue if not empty
             if ( this.intention_queue.length > 0 ) {
-                console.log( 'Agent.loop', this.intention_queue.map(i=>i.parent.name) );
+                console.log('Agent.loop');
             
                 // Current intention
                 const intention = this.intention_queue[0];
@@ -61,16 +66,10 @@ class Agent {
 
                 // Remove from the queue
                 this.intention_queue.shift();
-            }
+            } 
             // Postpone next iteration at setImmediate
             await new Promise( res => setImmediate( res ) );
         }
-    }
-
-    // async push ( predicate ) { }
-
-    log ( ...args ) {
-        console.log( ...args )
     }
 }
 
