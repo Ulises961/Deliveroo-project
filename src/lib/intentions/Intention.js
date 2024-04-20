@@ -1,4 +1,4 @@
-import {plans, updateMe} from '../utils/utils.js';
+import { plans, updateMe } from '../utils/utils.js';
 /**
  * Intention
  */
@@ -6,92 +6,122 @@ export default class Intention extends Promise {
 
     #resolve;
     #reject;
+    /**
+     * @type {number} the points assigned to this intention
+     */
+    #score
 
-    // Plan currently used for achieving the intention 
+    /**
+     * @type {Plan} the current plan that is being executed
+     */
     #current_plan;
-    
-    // This is used to stop the intention
+
+    /**
+     * @type {Boolean} if the intention has been stopped
+     */
     #stopped = false;
-    get stopped () {
+
+    /**
+     * @type {string} the desire that this intention is trying to achieve
+     */
+    #desire;
+
+    /**
+     * @type {Array} the arguments for the intentions
+     */
+    #predicate;
+
+    /**
+     * @type {Boolean} if the intention has been started
+     */
+    #started = false;
+
+    get stopped() {
         return this.#stopped;
     }
-    stop () {
+
+    stop() {
         // this.log( 'stop intention', ...this.#predicate );
         this.#stopped = true;
-        if ( this.#current_plan)
+        if (this.#current_plan)
             this.#current_plan.stop();
     }
 
-    
     /**
      * #parent refers to caller
     */
-   #parent;
-   get parent(){
-       return this.#parent;
-   }
+    get desire() {
+        return this.#desire;
+    }
 
     /**
      * predicate is in the form {desire, parcel}
     */
-    #predicate;
-    get predicate () {
+    get predicate() {
         return this.#predicate;
     }
 
-    constructor ( parent, predicate ) {
+    get score() {
+        return this.#score;
+    }
+
+    set score(score) {
+        this.#score = score;
+    }
+
+    constructor(desire, predicate, score) {
         var resolve, reject;
-        super( async (res, rej) => {
+        super(async (res, rej) => {
             resolve = res; reject = rej;
-        } )
+        })
         this.#resolve = resolve
         this.#reject = reject
-        this.#parent = parent;
+        this.#desire = desire;
         this.#predicate = predicate;
+        this.#score = score;
     }
 
-    log ( ...args ) {
-        if ( this.#parent && this.#parent.log )
-            this.#parent.log( '\t', ...args )
+    log(...args) {
+        if (this.#desire && this.#desire.log)
+            this.#desire.log('\t', ...args)
         else
-            console.log( ...args )
+            console.log(...args)
     }
 
-    #started = false;
     /**
      * Using the plan library to achieve an intention
      */
-    async achieve () {
+    async achieve() {
         // Cannot start twice
-        if ( this.#started)
+        if (this.#started)
             return this;
         else
             this.#started = true;
-        console.log( 'Intention.achieve', this.parent, ...this.predicate);
+        console.log('Intention.achieve', this.desire, ...this.predicate);
         // Trying all plans in the library
         for (const planClass of plans) {
             // console.log( 'Intention.plans', planClass.name, this.predicate, planClass.isApplicableTo( this.parent ) );
 
             // if stopped then quit
-            if ( this.stopped ) throw [ 'stopped intention', ...this.predicate ];
+            if (this.stopped) throw ['stopped intention', ...this.predicate];
 
             // if plan is 'statically' applicable
-            if ( planClass.isApplicableTo( this.parent ) ) {
+            if (planClass.isApplicableTo(this.desire)) {
 
                 // plan is instantiated
                 this.#current_plan = planClass;
                 this.log('achieving intention', ...this.predicate, 'with plan', planClass.name);
                 // and plan is executed and result returned
                 try {
-                    const plan_res = await this.#current_plan.execute( ...this.predicate );
-                    this.log( 'succesful intention', ...this.predicate, 'with plan', planClass.name, 'with result:', plan_res );
+                    const plan_res = await this.#current_plan.execute(...this.predicate);
+                    this.log('succesful intention', ...this.predicate, 'with plan', planClass.name, 'with result:', plan_res);
                     updateMe();
                     console.log("--------------------------------------------------------------------------------------\n\n\n\n");
                     return plan_res
-                // or errors are caught so to continue with next plan
+                    // or errors are caught so to continue with next plan
                 } catch (error) {
                     console.log(error)
-                    this.log( 'failed intention', ...this.predicate,'with plan', planClass.name, 'with error:', ...error );
+                    this.log('failed intention', ...this.predicate, 'with plan', planClass.name, 'with error:', ...error);
                     return false;
                 }
             }
@@ -99,11 +129,11 @@ export default class Intention extends Promise {
         }
 
         // if stopped then quit
-        if ( this.stopped ) throw [ 'stopped intention', ...this.predicate ];
+        if (this.stopped) throw ['stopped intention', ...this.predicate];
 
         // no plans have been found to satisfy the intention
         // this.log( 'no plan satisfied the intention ', ...this.predicate );
-        throw ['no plan satisfied the intention ', ...this.predicate ]
+        throw ['no plan satisfied the intention ', ...this.predicate]
     }
 
 

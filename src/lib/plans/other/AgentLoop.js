@@ -50,24 +50,25 @@ function chooseBestOption() {
     * Options generation
     */
     const options = new Map();
-    for (const [id,parcel] of parcels.entries()) {
+    for (const [id, parcel] of parcels.entries()) {
         if (!parcel.carriedBy) {
-            options.set(id,{
+            options.set(id, {
                 desire: 'go_pick_up',
-                args: [parcel]
+                args: [parcel],
+                score: 10
             });
         }
     }
 
     let best_option = findBestOption(options)
-    if(!options.size !== 0 && best_option?.args)
+    if (!options.size !== 0 && best_option?.args)
         options.delete(best_option.args[0].id);
     /**
      * Best option is selected
      */
     console.log('best_option', best_option)
     if (best_option)
-        agent.push({ desire: best_option.desire, args: best_option.args })
+        agent.push({ desire: best_option.desire, args: best_option.args, score: best_option.score })
     else
-        agent.push({desire: 'go_random', args: []})
+        agent.push({ desire: 'go_random', args: [], score: 1 })
 }
