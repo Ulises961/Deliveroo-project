@@ -61,14 +61,36 @@ const updateMe = async function updateMe() {
             me.x = x
             me.y = y
             me.score = score
-            console.log('utils.updateMe', me)
+            // console.log('utils.updateMe', me)
             res(me);
         });
     })
 };
 
+const configs = {
+    AGENTS_OBSERVATION_DISTANCE: 5,
+    PARCELS_OBSERVATION_DISTANCE: 5,
+    PARCEL_DECADING_INTERVAL: '1s' // Possibilities: '1s', '2s', '5s', '10s', 'infinite'
+}
+
+/**
+ * @type {[{id: string, reward: number}]}
+ */
+const carriedParcels = [];
+
+const carryParcel = (parcel) => {
+    carriedParcels.push({ id: parcel.id, reward: parcel.reward });
+    parcels.delete(parcel.id);
+}
+
+const decayIntervals = {'1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000};
+
 export {
     distance,
     updateMe,
-    findClosestDelivery, validCells, parcels, me, plans, MAX_NUM_MOVEMENT_RETRIES, euclideanDistance, map, deliveryPoints
+    findClosestDelivery, validCells, parcels, me, plans, MAX_NUM_MOVEMENT_RETRIES, euclideanDistance, map, deliveryPoints,
+    configs,
+    carriedParcels,
+    carryParcel,
+    decayIntervals
 };

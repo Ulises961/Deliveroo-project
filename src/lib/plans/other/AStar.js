@@ -44,7 +44,7 @@ export default class AStar extends Plan {
             current = cameFrom.get(current)
             totalPath.unshift(current)
         }
-        console.log('Path found: ', totalPath);
+        // console.log('Path found: ', totalPath);
         return totalPath
     }
 
@@ -88,7 +88,7 @@ export default class AStar extends Plan {
             }
             queue.sort((a, b) => fScore.get(a) - fScore.get(b))
         }
-        console.log('Astar.execute: path not found', queue);
+        // console.log('Astar.execute: path not found', queue);
         return []
     }
 }

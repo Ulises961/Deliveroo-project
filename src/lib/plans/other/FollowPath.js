@@ -1,6 +1,6 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { me, parcels, updateMe  } from '../../utils/utils.js';
+import { me, parcels, updateMe } from '../../utils/utils.js';
 
 export default class FollowPath extends Plan {
     constructor() {
@@ -13,15 +13,15 @@ export default class FollowPath extends Plan {
 
     async execute(path) {
         const parcelsOnTheWay = Array.from(parcels.values()).map(p => path.filter(cell => cell.x === p.x && cell.y === p.y)).flat();
-        console.log('GoPickUp.execute: path ', path, ' parcelsOnTheWay ', parcelsOnTheWay);            
+        // console.log('GoPickUp.execute: path ', path, ' parcelsOnTheWay ', parcelsOnTheWay);
         const target = path[path.length - 1];
 
         let retries = 0
         const MAX_RETRIES = 5 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {
             if (this.stopped)
-            throw ['stopped']; // if stopped then quit
-     
+                throw ['stopped']; // if stopped then quit
+
 
             me.x = Math.ceil(me.x);
             me.y = Math.ceil(me.y);
@@ -36,9 +36,9 @@ export default class FollowPath extends Plan {
                 direction = 'up';
 
             const moved = await client.move(direction);
-            
+
             updateMe();
-            if(Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)){
+            if (Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)) {
                 await client.pickup();
             }
 
@@ -47,20 +47,17 @@ export default class FollowPath extends Plan {
             }
         }
 
-        
+
         if (retries === MAX_RETRIES) {
             return false;
         }
-        
-       
+
+
         if (me?.x === target?.x && me?.y === target?.y) {
             return true;
-        } else  {
-            console.log('FollowPath.execute: path not completed', path, me);
+        } else {
+            // console.log('FollowPath.execute: path not completed', path, me);
             return false;
         }
-     
-      
     }
-
 }

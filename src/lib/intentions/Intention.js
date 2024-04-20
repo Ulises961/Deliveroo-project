@@ -43,6 +43,7 @@ export default class Intention extends Promise {
     stop() {
         // this.log( 'stop intention', ...this.#predicate );
         this.#stopped = true;
+        this.#started = false;
         if (this.#current_plan)
             this.#current_plan.stop();
     }
@@ -94,9 +95,11 @@ export default class Intention extends Promise {
     async achieve() {
         // Cannot start twice
         if (this.#started)
-            return this;
-        else
+            return false;
+        else {
+            this.#stopped = false;
             this.#started = true;
+        }
         console.log('Intention.achieve', this.desire, ...this.predicate);
         // Trying all plans in the library
         for (const planClass of plans) {
@@ -114,9 +117,9 @@ export default class Intention extends Promise {
                 // and plan is executed and result returned
                 try {
                     const plan_res = await this.#current_plan.execute(...this.predicate);
-                    this.log('succesful intention', ...this.predicate, 'with plan', planClass.name, 'with result:', plan_res);
-                    updateMe();
-                    console.log("--------------------------------------------------------------------------------------\n\n\n\n");
+                    // this.log('succesful intention', ...this.predicate, 'with plan', planClass.name, 'with result:', plan_res);
+                    // updateMe();
+                    // console.log("--------------------------------------------------------------------------------------\n\n\n\n");
                     return plan_res
                     // or errors are caught so to continue with next plan
                 } catch (error) {

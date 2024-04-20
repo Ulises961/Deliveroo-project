@@ -28,7 +28,7 @@ export default class Plan {
     #sub_intentions = [];
 
     async subIntention ( desire, args ) {
-        console.log('subIntention', desire, args);
+        // console.log('subIntention', desire, args);
         const sub_intention = new Intention( desire, [...args] );
         this.#sub_intentions.push(sub_intention);
         return await sub_intention.achieve();
