@@ -1,5 +1,5 @@
 import Plan from '../Plan.js';
-import { validCells } from '../../utils/utils.js';
+import { validCells, configs, distance, me } from '../../utils/utils.js';
 
 export default class RandomMove extends Plan {
 
@@ -14,17 +14,25 @@ export default class RandomMove extends Plan {
     async execute(predicate) {
         // TODO: choose from a cell right outside the vision, don't go too far.
         console.log('Executing RandomMove')
-     
+
         if (this.stopped) throw ['stopped']; // if stopped then quit
-        let index = Math.floor(Math.random() * validCells.length);
-        let destination = validCells[index];
+        /**
+         * Choose a cell that is outside the observation range, but not too far away
+         */
+        let validDestinations = validCells.filter(cell => {
+            let distanceToCell = distance(cell, me);
+            const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE + 3
+            return distanceToCell > configs.PARCELS_OBSERVATION_DISTANCE && distanceToCell < MAX_DISTANCE;
+        })
+        let index = Math.floor(Math.random() * validDestinations.length);
+        let destination = validDestinations[index];
         console.log('RandomMove: destination', destination, index);
         let path = await this.subIntention('a_star', [destination.x, destination.y]);
         path.reverse();
         path.shift();
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
-        
+
         const complete = await this.subIntention('follow_path', [path]);
         if (complete) {
             // return true;

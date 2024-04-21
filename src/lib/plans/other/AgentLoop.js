@@ -3,12 +3,15 @@ import { parcels, distance, me, configs, carriedParcels, findClosestDelivery } f
 import { agent } from '../../utils/agent.js';
 import client from '../../utils/client.js';
 
-// TODO: add discover timestamp in the parcel, and update the reward based on the time passed
+// TODO: update the reward based on the time passed
 
 /**
  * Options generation and filtering function
  */
 export function parcelsLoop(new_parcels) {
+    /**
+     * Update the score of the carried parcels
+     */
     updateCarriedParcelsScore()
 
     /**
@@ -16,22 +19,14 @@ export function parcelsLoop(new_parcels) {
     */
     removeOldParcels(new_parcels)
 
+    /**
+     * If there are new parcels, add them to the list
+     */
     addNewParcels(new_parcels)
 
-    let new_parcel = false;
-    for (const p of new_parcels) {
-        if (!parcels.has(p.id)) {
-            new_parcel = true;
-        }
-        // parcels.set(p.id, p)
-    }
-    // if (!new_parcel)
-    //     return;
-    // parcels.clear()
-    // for (const p of new_parcels) {
-    //     parcels.set(p.id, p)
-    // }
-
+    /**
+     * Choose the best option, which can be a parcel, the delivery, or a random walk
+     */
     chooseBestOption()
 }
 
@@ -60,6 +55,7 @@ function removeOldParcels(new_parcels) {
 function addNewParcels(new_parcels) {
     new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id))
     for (const parcel of new_parcels) {
+        parcel.discovery = Date.now()
         parcels.set(parcel.id, parcel)
     }
 }

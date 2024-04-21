@@ -26,6 +26,7 @@ export default class GoPickUp extends Plan {
             let id = predicate.id
             let reward = parcels.has(id) ? parcels.get(id).reward : predicate.reward
             carryParcel({ id, reward });
+            parcels.delete(id);
         }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
