@@ -1,5 +1,6 @@
 import Plan from '../Plan.js';
 import { me, map, euclideanDistance } from '../../utils/utils.js';
+import client from '../../utils/client.js';
 
 export default class AStar extends Plan {
     constructor() {
@@ -54,6 +55,11 @@ export default class AStar extends Plan {
      * @param {number} y - The y coordinate of the destination
      */
     async execute(x, y) {
+        let promise = new Promise(res => client.onYou(res)) 
+        // Wait for the client to update the agent's position
+        if (me.x % 1 != 0 || me.y % 1 != 0)
+            await promise
+        let agentPosition = { x: me.x, y: me.y }
 
         let queue = [new Cell(x, y)]
         let cameFrom = new Map()
@@ -62,12 +68,12 @@ export default class AStar extends Plan {
         gScore.set(queue[0], 0)
 
         let fScore = new Map()
-        fScore.set(queue[0], euclideanDistance(queue[0], new Cell(me.x, me.y)))
+        fScore.set(queue[0], euclideanDistance(queue[0], new Cell(agentPosition.x, agentPosition.y)))
 
         const MAX_SIZE = 50
         while (queue.length > 0 && queue.length < MAX_SIZE) {
             let current = queue[0]
-            if (current.x == me.x && current.y == me.y) {
+            if (current.x == agentPosition.x && current.y == agentPosition.y) {
                 return this.reconstructPath(cameFrom, current)
             }
 
@@ -79,7 +85,7 @@ export default class AStar extends Plan {
                 if (tentativeGScore < (gScore.get(neighbour) || Number.MAX_VALUE)) {
                     cameFrom.set(neighbour, current)
                     gScore.set(neighbour, tentativeGScore)
-                    fScore.set(neighbour, gScore.get(neighbour) + euclideanDistance(neighbour, new Cell(me.x, me.y)))
+                    fScore.set(neighbour, gScore.get(neighbour) + euclideanDistance(neighbour, new Cell(agentPosition.x, agentPosition.y)))
 
                     if (!queue.includes(neighbour)) {
                         queue.push(neighbour)

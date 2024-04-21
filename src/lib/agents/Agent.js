@@ -18,11 +18,11 @@ class Agent {
      */
     async push(option) {
         // If the intention is already queued
-        let sameIntention = this.intention_queue.find((i) => i.predicate.join(' ') === option.args.join(' ') && i.parent === option.desire);
+        let sameIntention = this.intention_queue.find((i) => i.predicate.join(' ') === option.args.join(' ') && i.desire === option.desire);
         if (sameIntention) {
             // Update the score
             sameIntention.score = option.score;
-            sortIntentions()
+            this.sortIntentions()
             return;
         }
 
@@ -40,10 +40,12 @@ class Agent {
     }
 
     sortIntentions() {
-        // Order the intentions by score
-        this.intention_queue.sort((a, b) => a.score - b.score);
         // Stop all intentions except the first one, in case they have started before discovering this new intention
-        this.intention_queue.slice(1, this.intention_queue.length - 1).forEach(i => i.stop());
+        this.intention_queue.forEach(i => i.stop());
+        // Remove intentions with negative score!
+        this.intention_queue = this.intention_queue.filter(i => i.score >= 0);
+        // Order the intentions by score (decreasing)
+        this.intention_queue.sort((a, b) => b.score - a.score);
     }
 
     #intention_queue = new Array();
@@ -62,7 +64,8 @@ class Agent {
             intention.score = newScore;
             console.log('Updated intention score', intention.predicate, intention.score)
         } else {
-            this.intention_queue.push(new Intention(desire, args, newScore));
+            this.push({ desire: desire, args: args, score: newScore });
+            // this.intention_queue.push(new Intention(desire, args, newScore));
         }
         this.sortIntentions()
     }
@@ -73,6 +76,8 @@ class Agent {
         // Default intention, if there are no parcels or if the score for the others is negative, use this. 
         this.#intention_queue.push(new Intention('go_random', [], 1));
         this.#intention_queue.push(new Intention('go_deliver', [], 0)); // Update score based on parcels held
+
+        const fixedIntentions = ['go_random', 'go_deliver'];
 
         while (true) {
             // Consumes intention_queue if not empty
@@ -86,9 +91,10 @@ class Agent {
                 // TODO: Reasons to drop an intention:
                 // - A new intention has a higher priority -> postpone
                 // - The intention is no longer valid -> drop
-                if (intention.stopped || intention.score < 0) {
+                if (intention.score <= 0) {
                     console.log('Skipping intention because no more valid', intention.desire)
-                    this.intention_queue.shift();
+                    if (!fixedIntentions.includes(intention.desire))
+                        this.intention_queue = this.#intention_queue.filter(i => i !== intention);
                     continue;
                 }
 
@@ -109,7 +115,9 @@ class Agent {
                     });
 
                 // Remove from the queue
-                this.intention_queue.shift();
+                if (!fixedIntentions.includes(intention.desire))
+                    this.intention_queue = this.#intention_queue.filter(i => i !== intention);
+                // this.intention_queue.shift();
             }
             // Postpone next iteration at setImmediate
             await new Promise(res => setImmediate(res));

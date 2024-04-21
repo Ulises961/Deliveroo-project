@@ -1,6 +1,7 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
 import { findClosestDelivery, me, carriedParcels } from '../../utils/utils.js';
+import { agent } from '../../utils/agent.js';
 
 export default class GoDeliver extends Plan {
 
@@ -23,6 +24,8 @@ export default class GoDeliver extends Plan {
         path = path.reverse();
         path.shift();
 
+        let promise = new Promise(res => client.onYou(res)) // Wait for the client to update the agent's position
+
         // console.log('GoDeliver.execute: path ', path);
         if (this.stopped) throw ['stopped']; // if stopped then quit
         
@@ -33,11 +36,12 @@ export default class GoDeliver extends Plan {
         let path_completed = await this.subIntention('follow_path', [path]);
         
         if(path_completed) {
-            // console.log('GoDeliver.execute: path completed', path);
+            // Wait for the client to update the agent's position
+            if (me.x % 1 != 0 || me.y % 1 != 0)
+                await promise
             let result = await client.putdown();
-            if (result) {
-                carriedParcels.length = 0;
-            }
+            carriedParcels.length = 0;
+            agent.changeIntentionScore('go_deliver', [], -1);
             return result
         }
 

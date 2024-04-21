@@ -1,6 +1,7 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
 import { distance, me, deliveryPoints, parcels, carryParcel } from '../../utils/utils.js';
+import { agent } from '../../utils/agent.js';
 
 export default class GoPickUp extends Plan {
 
@@ -22,12 +23,11 @@ export default class GoPickUp extends Plan {
         await this.subIntention('follow_path', [path]);
         let pickup = await client.pickup();
 
-        if (pickup) {
-            let id = predicate.id
-            let reward = parcels.has(id) ? parcels.get(id).reward : predicate.reward
-            carryParcel({ id, reward });
-            parcels.delete(id);
-        }
+        let id = predicate.id
+        let reward = parcels.has(id) ? parcels.get(id).reward : predicate.reward
+        carryParcel({ id, reward });
+        parcels.delete(id);
+        agent.changeIntentionScore('go_pick_up', [predicate], -1);
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
 
