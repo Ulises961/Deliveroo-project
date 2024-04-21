@@ -79,11 +79,14 @@ const configs = {
 const carriedParcels = [];
 
 const carryParcel = (parcel) => {
+    if (carriedParcels.find(p => p.id === parcel.id)) {
+        return;
+    }
     carriedParcels.push({ id: parcel.id, reward: parcel.reward });
     parcels.delete(parcel.id);
 }
 
-const decayIntervals = {'1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000};
+const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000 };
 
 /**
  * The agents perceived by our agent
