@@ -23,13 +23,15 @@ export default class GoDeliver extends Plan {
         let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y]);
         path = path.reverse();
         path.shift();
+        // TODO: if no path, find another delivery point!
+
 
         let promise = new Promise(res => client.onYou(res)) // Wait for the client to update the agent's position
 
         // console.log('GoDeliver.execute: path ', path);
         if (this.stopped) throw ['stopped']; // if stopped then quit
         
-        if(path.length === 0) {
+        if (path.length === 0) {
             // console.log('GoDeliver.execute: path is empty');
             throw ['no path'];
         }

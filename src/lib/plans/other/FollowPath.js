@@ -12,7 +12,7 @@ export default class FollowPath extends Plan {
     }
 
     async execute(path) {
-        const parcelsOnTheWay = Array.from(parcels.values()).map(p => path.filter(cell => cell.x === p.x && cell.y === p.y)).flat();
+        // const parcelsOnTheWay = Array.from(parcels.values()).map(p => path.filter(cell => cell.x === p.x && cell.y === p.y)).flat();
         // console.log('GoPickUp.execute: path ', path, ' parcelsOnTheWay ', parcelsOnTheWay);
         const target = path[path.length - 1];
 
@@ -44,6 +44,8 @@ export default class FollowPath extends Plan {
 
             if (!moved) {
                 retries++;
+                // Re-compute path
+                path = await this.subIntention('a_star', [target.x, target.y]);
             }
         }
 
