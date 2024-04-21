@@ -5,10 +5,27 @@ import client from '../../utils/client.js';
 
 // TODO: update the reward based on the time passed
 
+let parcelScoreInterval = null;
+
 /**
  * Options generation and filtering function
  */
 export function parcelsLoop(new_parcels) {
+    /**
+     * Update the score of the parcels, if the score reaches 0, delete it from the map.
+     * Update the reward for the intention as well.
+     */
+    if (!parcelScoreInterval) {
+        parcelScoreInterval = setInterval(() => {
+            parcels.forEach((parcel) => {
+                parcel.reward = Math.max(0, parcel.reward - 1)
+                if (parcel.reward == 0) 
+                parcels.delete(parcel.id)
+                updateIntentionScore(parcel, parcel.reward * 2 - distance(parcel, me))
+            });
+        }, configs.PARCEL_DECADING_INTERVAL)
+    }
+
     /**
      * Update the score of the carried parcels
      */

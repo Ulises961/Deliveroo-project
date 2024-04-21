@@ -22,7 +22,7 @@ export default class RandomMove extends Plan {
         let validDestinations = validCells.filter(cell => {
             let distanceToCell = distance(cell, me);
             const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE + 3
-            return distanceToCell > configs.PARCELS_OBSERVATION_DISTANCE && distanceToCell < MAX_DISTANCE;
+            return distanceToCell < MAX_DISTANCE;
         })
         let index = Math.floor(Math.random() * validDestinations.length);
         let destination = validDestinations[index];
