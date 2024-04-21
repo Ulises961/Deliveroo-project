@@ -38,6 +38,9 @@ export default class FollowPath extends Plan {
             const moved = await client.move(direction);
 
             updateMe();
+            if (me.x % 1 != 0 || me.y % 1 != 0)
+                await new Promise(res => client.onYou(res))
+
             if (Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)) {
                 await client.pickup();
             }

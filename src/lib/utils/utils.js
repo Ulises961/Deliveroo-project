@@ -22,16 +22,18 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
-const findClosestDelivery = function findClosestDelivery() {
+const findClosestDelivery = function findClosestDelivery(exception = null) {
     let closestDelivery = { point: null, distance: Infinity };
-    deliveryPoints.reduce((acc, point) => {
-        const dist = distance(me, point);
-        if (dist < acc.distance) {
-            acc.distance = dist;
-            acc.point = point;
-        }
-        return acc;
-    }, closestDelivery);
+    deliveryPoints
+        .filter(deliveryPoint => deliveryPoints !== exception) // Filter out the exception
+        .reduce((acc, point) => { // Find the closest delivery point
+            const dist = distance(me, point);
+            if (dist < acc.distance) {
+                acc.distance = dist;
+                acc.point = point;
+            }
+            return acc;
+        }, closestDelivery);
     return closestDelivery;
 }
 const validCells = [];
