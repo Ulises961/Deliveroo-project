@@ -87,7 +87,7 @@ class Agent {
                 // - A new intention has a higher priority -> postpone
                 // - The intention is no longer valid -> drop
                 if (intention.stopped || intention.score < 0) {
-                    console.log('Skipping intention because no more valid', intention.predicate.desire)
+                    console.log('Skipping intention because no more valid', intention.desire)
                     this.intention_queue.shift();
                     continue;
                 }

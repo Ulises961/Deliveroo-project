@@ -85,6 +85,12 @@ const carryParcel = (parcel) => {
 
 const decayIntervals = {'1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000};
 
+/**
+ * The agents perceived by our agent
+ * @type {[{id: string, x: number, y: number, name: string, score: number}]}
+ */
+const agentsMap = []
+
 export {
     distance,
     updateMe,
@@ -92,5 +98,6 @@ export {
     configs,
     carriedParcels,
     carryParcel,
-    decayIntervals
+    decayIntervals,
+    agentsMap
 };
