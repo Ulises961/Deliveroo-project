@@ -1,7 +1,6 @@
 
 import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
-import client from '../../utils/client.js';
 
 // TODO: update the reward based on the time passed
 
@@ -22,7 +21,7 @@ export function parcelsLoop(new_parcels) {
                 parcel.reward = Math.max(0, parcel.reward - 1)
                 if (parcel.reward == 0)
                     parcels.delete(parcel.id)
-                updateIntentionScore(parcel, parcel.reward * 2 - distance(parcel, me))
+                updateIntentionScore(parcel, parcel.reward * 2 - distance(parcel, me), parcel.id)
             });
         }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
     }
@@ -34,8 +33,6 @@ export function parcelsLoop(new_parcels) {
             updateCarriedParcelsScore()
         }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
     }
-
-    // updateCarriedParcelsScore()
 
     /**
     * If there are no new parcels, stop reconsidering
@@ -56,8 +53,8 @@ export function parcelsLoop(new_parcels) {
 /**
  * Update the intention score for the parcel (if the parcel has a new score, so that the agent can reconsider)
  */
-function updateIntentionScore(parcel, newScore) {
-    agent.changeIntentionScore('go_pick_up', [parcel], newScore)
+function updateIntentionScore(parcel, newScore, id) {
+    agent.changeIntentionScore('go_pick_up', [parcel], newScore, id)
 }
 
 /**
@@ -72,10 +69,10 @@ function removeOldParcels(new_parcels) {
             // If the parcel doesn't exists anymore
             if (!new_parcels.includes(parcel.id)) {
                 parcels.delete(parcel.id)
-                updateIntentionScore(parcel, -1) // Drop the intention
+                updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
                 parcels.set(parcel.id, new_parcels.get(parcel.id))
-                updateIntentionScore(parcel, parcel.reward * 2 - distance(parcel, me))
+                updateIntentionScore(parcel, parcel.reward * 2 - distance(parcel, me), parcel.id)
             }
         }
     }
@@ -92,26 +89,7 @@ function addNewParcels(new_parcels) {
     }
 }
 
-/**
- * Find the best parcel to pick up (based on distance, for now)
- */
-function findBestParcel(options) {
-    /**
-     * Options filtering
-     */
-    let best_option;
-    let nearest = Number.MAX_VALUE;
-    for (const option of options.values()) {
-        if (option.desire == 'go_pick_up') {
-            let current_d = distance(option.args[0], me)
-            if (current_d < nearest && current_d < option.args[0].reward) {
-                best_option = option
-                nearest = current_d
-            }
-        }
-    }
-    return best_option
-}
+
 
 function chooseBestOption() {
     /**
@@ -123,32 +101,28 @@ function chooseBestOption() {
             options.set(id, {
                 desire: 'go_pick_up',
                 args: [parcel],
-                score: parcel.reward - distance(parcel, me)
+                score: parcel.reward - distance(parcel, me),
+                id: id
             });
         }
     }
 
-    // let best_parcel = findBestParcel(options)
     for (const parcel of options.values()) {
-        agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score })
+        if(parcel.score > 0){
+            agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score, id: parcel.id})
+        }
     }
     if (options.size == 0) {
-        agent.push({ desire: 'go_random', args: [], score: 1 })
+        agent.push({ desire: 'go_random', args: [], score: 1, id: 'go_random'})
     }
 
-    /**
-     * Best option is selected
-     */
-    // console.log('best_option', best_parcel)
-    // // if (best_parcel)
-    // else
-    //     agent.push({ desire: 'go_random', args: [], score: 1 })
 }
 
-function updateCarriedParcelsScore() {
+export function updateCarriedParcelsScore() {
     let sumScore = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0)
     let closestDelivery = findClosestDelivery()
-    if (sumScore > 0)
+    if (sumScore > 0){
         console.log('updateCarriedParcelsScore', sumScore - closestDelivery.distance, sumScore, closestDelivery.distance)
-    agent.changeIntentionScore('go_deliver', [], sumScore - Math.floor(closestDelivery.distance / 2))
+        agent.changeIntentionScore('go_deliver', [], sumScore - Math.floor(closestDelivery.distance / 2), 'go_deliver')
+    }
 }

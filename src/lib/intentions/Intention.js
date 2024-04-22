@@ -10,6 +10,11 @@ export default class Intention extends Promise {
      * @type {number} the points assigned to this intention
      */
     #score
+    
+    /**
+     * @type {number} the id assigned to this intention
+     */
+    #id
 
     /**
      * @type {Plan} the current plan that is being executed
@@ -70,7 +75,11 @@ export default class Intention extends Promise {
         this.#score = score;
     }
 
-    constructor(desire, predicate, score) {
+    get id() {
+        return this.#id;
+    }
+
+    constructor(desire, predicate, score, id) {
         var resolve, reject;
         super(async (res, rej) => {
             resolve = res; reject = rej;
@@ -80,6 +89,11 @@ export default class Intention extends Promise {
         this.#desire = desire;
         this.#predicate = predicate;
         this.#score = score;
+        this.#id = id
+    }
+
+    toString() {
+        return `Intention: { id: ${this.id}, desire: ${this.desire}, score: ${this.score} }`;
     }
 
     log(...args) {
@@ -100,26 +114,27 @@ export default class Intention extends Promise {
             this.#stopped = false;
             this.#started = true;
         }
-        console.log('Intention.achieve', this.desire, ...this.predicate);
+        console.log('Intention.achieve', this.desire);
         // Trying all plans in the library
         for (const planClass of plans) {
             // console.log( 'Intention.plans', planClass.name, this.predicate, planClass.isApplicableTo( this.parent ) );
 
             // if stopped then quit
-            if (this.stopped) throw ['stopped intention', ...this.predicate];
+            if (this.stopped) throw ['stopped intention', this.desire];
 
             // if plan is 'statically' applicable
             if (planClass.isApplicableTo(this.desire)) {
 
                 // plan is instantiated
                 this.#current_plan = planClass;
-                this.log('achieving intention', ...this.predicate, 'with plan', planClass.name);
+                this.log('achieving intention',  planClass.name);
                 // and plan is executed and result returned
                 try {
                     const plan_res = await this.#current_plan.execute(...this.predicate);
-                    // this.log('succesful intention', ...this.predicate, 'with plan', planClass.name, 'with result:', plan_res);
-                    // updateMe();
-                    // console.log("--------------------------------------------------------------------------------------\n\n\n\n");
+                    this.log('succesful intention',  planClass.name, 'with result:', plan_res);
+                    updateMe();
+                    console.log("--------------------------------------------------------------------------------------\n\n\n\n");
+                    
                     return plan_res
                     // or errors are caught so to continue with next plan
                 } catch (error) {

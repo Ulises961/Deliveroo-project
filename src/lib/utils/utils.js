@@ -25,7 +25,7 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
 const findClosestDelivery = function findClosestDelivery(exception = null) {
     let closestDelivery = { point: null, distance: Infinity };
     deliveryPoints
-        .filter(deliveryPoint => deliveryPoints !== exception) // Filter out the exception
+        .filter(deliveryPoint => deliveryPoint !== exception) // Filter out the exception
         .reduce((acc, point) => { // Find the closest delivery point
             const dist = distance(me, point);
             if (dist < acc.distance) {
@@ -55,6 +55,7 @@ const deliveryPoints = map.filter(cell => cell.delivery);
  */
 const plans = [];
 const MAX_NUM_MOVEMENT_RETRIES = 5;
+
 const updateMe = async function updateMe() {
     return await new Promise(res => {
         client.onYou(({ id, name, x, y, score }) => {

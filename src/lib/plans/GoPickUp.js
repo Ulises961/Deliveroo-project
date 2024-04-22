@@ -1,7 +1,8 @@
-import Plan from '../Plan.js';
-import client from '../../utils/client.js';
-import { distance, me, deliveryPoints, parcels, carryParcel } from '../../utils/utils.js';
-import { agent } from '../../utils/agent.js';
+import Plan from './Plan.js';
+import client from '../utils/client.js';
+import { distance, me, deliveryPoints, parcels, carryParcel } from '../utils/utils.js';
+import { agent } from '../utils/agent.js';
+import { updateCarriedParcelsScore } from './other/AgentLoop.js';
 
 export default class GoPickUp extends Plan {
 
@@ -31,8 +32,8 @@ export default class GoPickUp extends Plan {
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
 
-        // await this.subIntention('go_deliver', []);
-
+        updateCarriedParcelsScore();
+        
         return true;
     }
 

@@ -1,5 +1,5 @@
-import Plan from '../Plan.js';
-import { validCells, configs, distance, me } from '../../utils/utils.js';
+import Plan from './Plan.js';
+import { validCells, configs, distance, me } from '../utils/utils.js';
 
 export default class RandomMove extends Plan {
 

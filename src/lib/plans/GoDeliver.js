@@ -1,7 +1,7 @@
-import Plan from '../Plan.js';
-import client from '../../utils/client.js';
-import { findClosestDelivery, me, carriedParcels } from '../../utils/utils.js';
-import { agent } from '../../utils/agent.js';
+import Plan from './Plan.js';
+import client from '../utils/client.js';
+import { findClosestDelivery, me, carriedParcels } from '../utils/utils.js';
+import { agent } from '../utils/agent.js';
 
 export default class GoDeliver extends Plan {
 
@@ -42,7 +42,7 @@ export default class GoDeliver extends Plan {
                     await promise
                 let result = await client.putdown();
                 carriedParcels.length = 0;
-                agent.changeIntentionScore('go_deliver', [], -1);
+                agent.changeIntentionScore('go_deliver', [], -1, 'go_deliver');
                 return result
             } 
             retries++;

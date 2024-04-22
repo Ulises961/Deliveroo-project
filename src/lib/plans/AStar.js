@@ -1,6 +1,6 @@
-import Plan from '../Plan.js';
-import { me, map, euclideanDistance, agentsMap } from '../../utils/utils.js';
-import client from '../../utils/client.js';
+import Plan from './Plan.js';
+import { me, map, euclideanDistance, agentsMap, validCells } from '../utils/utils.js';
+import client from '../utils/client.js';
 
 export default class AStar extends Plan {
     constructor() {
@@ -77,7 +77,7 @@ export default class AStar extends Plan {
         let fScore = new Map()
         fScore.set(queue[0], euclideanDistance(queue[0], new Cell(agentPosition.x, agentPosition.y)))
 
-        const MAX_SIZE = 50
+        const MAX_SIZE = validCells.length;
         while (queue.length > 0 && queue.length < MAX_SIZE) {
             let current = queue[0]
             if (current.x == agentPosition.x && current.y == agentPosition.y) {
@@ -94,15 +94,19 @@ export default class AStar extends Plan {
                     gScore.set(neighbour, tentativeGScore)
                     fScore.set(neighbour, gScore.get(neighbour) + euclideanDistance(neighbour, new Cell(agentPosition.x, agentPosition.y)))
 
-                    if (!queue.includes(neighbour)) {
+                    if (!this.includesCell(queue, neighbour)) {
                         queue.push(neighbour)
                     }
                 }
             }
             queue.sort((a, b) => fScore.get(a) - fScore.get(b))
         }
-        // console.log('Astar.execute: path not found', queue);
+        console.log('Astar.execute: path not found', queue);
         return []
+    }
+
+    includesCell(queue, cell) {
+        return queue.some(c => c.x === cell.x && c.y === cell.y);
     }
 }
 
