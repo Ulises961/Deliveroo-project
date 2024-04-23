@@ -1,4 +1,6 @@
 import Intention from '../intentions/Intention.js';
+import { agent } from '../utils/agent.js';
+import client from '../utils/client.js';
 
 /**
  * Intention revision / execution loop
@@ -91,23 +93,25 @@ class Agent {
                 if (intention.score <= 0) {
                     console.log('Skipping intention because no more valid', intention.desire)
                     if (!fixedIntentions.includes(intention.desire)) {
-                        this.intention_queue = this.intention_queue.filter(i => i.parent !== intention);
+                        this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
                     }
                     continue;
                 }
 
-    
+                 
                 // Start achieving intention
                 const achieved = await intention.achieve()
-                    // Catch eventual error and continue
-                    .catch(error => {
-                        console.log('Failed intention', ...intention.predicate, 'with error:', ...error);
-                        this.intention_queue.splice(intention, 1);  
-                    });
+                // Catch eventual error and continue
+                .catch(error => {
+                    console.log('Failed intention', ...intention.predicate, 'with error:', ...error);
+                    this.intention_queue.splice(intention, 1);  
+                });
                 
                 // Remove failed intentions from the queue    
                 if(!achieved){
                     console.log('Failed intention');
+                    this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
+                    client.say('6cf643e3b78',`Intention ${intention.desire} \nachieved? ${achieved}`);
                     
                 }
                 // Remove from the queue

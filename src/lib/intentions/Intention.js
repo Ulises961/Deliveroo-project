@@ -1,4 +1,4 @@
-import { plans, updateMe } from '../utils/utils.js';
+import { plans } from '../utils/utils.js';
 /**
  * Intention
  */
@@ -132,7 +132,6 @@ export default class Intention extends Promise {
                 try {
                     const plan_res = await this.#current_plan.execute(...this.predicate);
                     this.log('succesful intention',  planClass.name, 'with result:', plan_res);
-                    updateMe();
                     console.log("--------------------------------------------------------------------------------------\n\n\n\n");
                     
                     return plan_res
@@ -150,22 +149,6 @@ export default class Intention extends Promise {
         if (this.stopped) throw ['stopped intention', ...this.predicate];
 
         // no plans have been found to satisfy the intention
-        // this.log( 'no plan satisfied the intention ', ...this.predicate );
         throw ['no plan satisfied the intention ', ...this.predicate]
     }
-
-
-
-    /**
-     * TODO:
-     * Go through the plans library and find the plan that:
-     * 1. Is applicable to the desire
-     * 2. Has the highest priority
-     * 3. Can achieve the desire
-     * 4. Execute the plan
-     * 5.a If the plan fails, try the next plan
-     * 5.b If the plan fails, insist on the intention
-     * 6. If all plans fail, reject the intention
-     * 7. If the plan succeeds, resolve the intention
-     */
 }
