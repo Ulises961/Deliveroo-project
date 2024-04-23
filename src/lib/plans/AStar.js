@@ -83,8 +83,9 @@ export default class AStar extends Plan {
             if (current.x == agentPosition.x && current.y == agentPosition.y) {
                 return this.reconstructPath(cameFrom, current)
             }
-
+            
             queue = queue.slice(1)
+            console.log('Astar.execute: queue', queue);
 
             for (let neighbour of this.getNeighbours(current)) {
                 let tentativeGScore = gScore.get(current) + 1
@@ -94,7 +95,7 @@ export default class AStar extends Plan {
                     gScore.set(neighbour, tentativeGScore)
                     fScore.set(neighbour, gScore.get(neighbour) + euclideanDistance(neighbour, new Cell(agentPosition.x, agentPosition.y)))
 
-                    if (!this.includesCell(queue, neighbour)) {
+                    if (!queue.includes(neighbour)) {
                         queue.push(neighbour)
                     }
                 }
@@ -105,9 +106,6 @@ export default class AStar extends Plan {
         return []
     }
 
-    includesCell(queue, cell) {
-        return queue.some(c => c.x === cell.x && c.y === cell.y);
-    }
 }
 
 class Cell {
