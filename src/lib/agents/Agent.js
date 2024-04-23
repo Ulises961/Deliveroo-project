@@ -68,7 +68,6 @@ class Agent {
     }
 
     async loop() {
-        console.log('Agent.loop', this.count++);
         this.emptyIntentions(); // Empty intentions queue
 
 
@@ -89,7 +88,7 @@ class Agent {
                 // TODO: Reasons to drop an intention:
                 // - A new intention has a higher priority -> postpone
                 if (intention.score <= 0) {
-                    console.log('Skipping intention because no more valid', intention.desire)
+                    console.log('AgentLoop. Skipping intention because no more valid', intention.desire)
                     if (!fixedIntentions.includes(intention.desire)) {
                         this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
                     }
@@ -100,7 +99,7 @@ class Agent {
                 const achieved = await intention.achieve()
                 // Catch eventual error and continue
                 .catch(error => {
-                    console.log('Failed intention', ...intention.predicate, 'with error:', ...error);
+                    console.log('Failed intention', intention.predicate, 'with error:', error);
                     this.intention_queue.splice(intention, 1);  
                 });
 
@@ -109,9 +108,7 @@ class Agent {
                 // Remove failed intentions from the queue    
                 if(!achieved){
                     console.log('Failed intention');
-                    this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
-                    client.say('6cf643e3b78',`Intention ${intention.desire} \nachieved? ${achieved}`);
-                    
+                    this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);                    
                 }
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))

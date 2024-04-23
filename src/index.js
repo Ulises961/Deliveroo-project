@@ -1,9 +1,9 @@
 import {
     map, deliveryPoints, validCells, updateMe, configs, carriedParcels,
-    decayIntervals, agentsMap
+    decayIntervals, agentsMap, GROUP, partner, me
 } from "./lib/utils/utils.js";
 import { agent } from "./lib/utils/agent.js";
-import client from './lib/utils/client.js';
+import client, {askPartnerId, passOwnId} from './lib/utils/client.js';
 import { parcelsLoop } from './lib/plans/other/AgentLoop.js'
 import './lib/plans/other/Library.js'
 
@@ -61,7 +61,6 @@ client.onConfig(config => {
         carriedParcels.forEach(p => p.reward -= 1);
         // Remove parcels with negative/0 reward
         carriedParcels.filter(p => p.reward <= 0).forEach(p => carriedParcels.splice(carriedParcels.indexOf(p), 1));
-        console.log(carriedParcels)
     }, decayIntervals[configs.PARCEL_DECADING_INTERVAL]);
 })
 
@@ -72,17 +71,26 @@ client.onConfig(config => {
 client.onAgentsSensing(agents => {
     agentsMap.length = 0;
     agentsMap.push(...agents);
-    // console.log(agentsMap)
 });
 
 await updateMe();
 
+const partnerName = GROUP[0] === me.name? GROUP[1]: GROUP[0];
+
+askPartnerId(partnerName);
+client.socket.on('shout', msg => {  if(msg === me.name) passOwnId(me.id) });
+
+client.socket.on('say', (toId, msg) => {  
+    if(toId === me.id){
+        partner.id = msg.id;
+        partner.name = msg.name;
+    } 
+});
 
 
 /**
  * BDI loop
  */
-
 
 client.onParcelsSensing(parcelsLoop)
 

@@ -117,7 +117,6 @@ export default class Intention extends Promise {
         }
         // Trying all plans in the library
         for (const planClass of plans) {
-            // console.log( 'Intention.plans', planClass.name, this.predicate, planClass.isApplicableTo( this.parent ) );
 
             // if stopped then quit
             if (this.stopped) throw ['stopped intention', this.desire];
@@ -138,7 +137,7 @@ export default class Intention extends Promise {
                     // or errors are caught so to continue with next plan
                 } catch (error) {
                     console.log(error)
-                    this.log('failed intention', ...this.predicate, 'with plan', planClass.name, 'with error:', ...error);
+                    this.log('failed intention', 'with plan', planClass.name, 'with error:', error);
                     return false;
                 }
             }
