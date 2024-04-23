@@ -85,7 +85,7 @@ export default class AStar extends Plan {
             }
             
             queue = queue.slice(1)
-            console.log('Astar.execute: queue', queue);
+
 
             for (let neighbour of this.getNeighbours(current)) {
                 let tentativeGScore = gScore.get(current) + 1
@@ -102,7 +102,6 @@ export default class AStar extends Plan {
             }
             queue.sort((a, b) => fScore.get(a) - fScore.get(b))
         }
-        console.log('Astar.execute: path not found', queue);
         return []
     }
 

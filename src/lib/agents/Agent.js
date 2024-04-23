@@ -1,6 +1,6 @@
 import Intention from '../intentions/Intention.js';
-import { agent } from '../utils/agent.js';
 import client from '../utils/client.js';
+import { updateMe } from '../utils/utils.js';
 
 /**
  * Intention revision / execution loop
@@ -13,7 +13,7 @@ class Agent {
 
     constructor() {
     }
-
+    count = 0;
     /**
      * Pushes a new intention to the queue
      * @param {{desire: string, args: [Object], score: number}} option the intention to be pushed
@@ -33,7 +33,6 @@ class Agent {
 
         const intention = new Intention(option.desire, option.args, option.score, option.id);
         this.intention_queue.push(intention);
-        this.intention_queue.forEach(i => console.log(i.toString()));
 
         // Check if already queued
 
@@ -62,7 +61,6 @@ class Agent {
         let intention = this.intention_queue.find((i) => i.id === id);
         if (intention) {
             intention.score = newScore;
-            console.log('Updated intention score', intention.predicate, intention.score)
         } else {
             this.push({ desire: desire, args: args, score: newScore, id: id });
         }
@@ -70,6 +68,7 @@ class Agent {
     }
 
     async loop() {
+        console.log('Agent.loop', this.count++);
         this.emptyIntentions(); // Empty intentions queue
 
 
@@ -83,7 +82,6 @@ class Agent {
         while (true) {
             // Consumes intention_queue if not empty
             if (this.intention_queue.length > 0) {
-
                 // Current intention
                 const intention = this.intention_queue[0];
 
@@ -95,7 +93,6 @@ class Agent {
                     if (!fixedIntentions.includes(intention.desire)) {
                         this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
                     }
-                    continue;
                 }
 
                  
@@ -106,6 +103,8 @@ class Agent {
                     console.log('Failed intention', ...intention.predicate, 'with error:', ...error);
                     this.intention_queue.splice(intention, 1);  
                 });
+
+                updateMe();
                 
                 // Remove failed intentions from the queue    
                 if(!achieved){

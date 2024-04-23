@@ -14,7 +14,7 @@ export default class GoDeliver extends Plan {
     }
 
     async execute(predicate) {
-        let closestDelivery = findClosestDelivery();
+        let closestDelivery = findClosestDelivery(null, me);
         let retries = 0;
         const MAX_RETRIES = 5;
         while (!this.stopped && retries < MAX_RETRIES) {
@@ -32,7 +32,7 @@ export default class GoDeliver extends Plan {
                 throw ['stopped']; // if stopped then quit
             if (path.length === 0) {
                 // throw ['no path'];
-                closestDelivery = findClosestDelivery(closestDelivery.point)
+                closestDelivery = findClosestDelivery(closestDelivery.point, me)
             }
             let path_completed = await this.subIntention('follow_path', [path]);
 

@@ -97,10 +97,11 @@ export default class Intention extends Promise {
     }
 
     log(...args) {
-        if (this.#desire && this.#desire.log)
+        if (this.#desire && this.#desire.log) {
             this.#desire.log('\t', ...args)
-        else
+        } else {
             console.log(...args)
+        }
     }
 
     /**
@@ -114,7 +115,6 @@ export default class Intention extends Promise {
             this.#stopped = false;
             this.#started = true;
         }
-        console.log('Intention.achieve', this.desire);
         // Trying all plans in the library
         for (const planClass of plans) {
             // console.log( 'Intention.plans', planClass.name, this.predicate, planClass.isApplicableTo( this.parent ) );

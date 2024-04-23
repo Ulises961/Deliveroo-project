@@ -25,6 +25,7 @@ export function parcelsLoop(new_parcels) {
             });
         }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
     }
+    
     if (!carriedParcelsScoreInterval) {
         /**
          * Update the score of the carried parcels
@@ -119,10 +120,39 @@ function chooseBestOption() {
 }
 
 export function updateCarriedParcelsScore() {
-    let sumScore = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0)
-    let closestDelivery = findClosestDelivery()
+    let sumScore = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0)   
     if (sumScore > 0){
-        console.log('updateCarriedParcelsScore', sumScore - closestDelivery.distance, sumScore, closestDelivery.distance)
-        agent.changeIntentionScore('go_deliver', [], sumScore - Math.floor(closestDelivery.distance / 2), 'go_deliver')
+        decidePickupOrDeliver(sumScore,carriedParcels);
     }
 }
+
+function decidePickupOrDeliver(sumScore,carriedParcels){
+    const lowestValuedParcel = carriedParcels.reduce((previous, current) => previous.reward < current.reward ? previous : current, carriedParcels[0]);
+
+    const nextParcel = Array.from(parcels.values()).reduce((previous, current) => previous.reward > current.reward ? previous : current, parcels.values().next().value);
+
+    if(!nextParcel){
+        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver'})
+        return;
+    }
+
+    const distanceToParcel = distance(me, nextParcel);
+    const distanceParcelToDelivery = findClosestDelivery(null, nextParcel).distance;
+  
+    const totalDistance = distanceParcelToDelivery + distanceToParcel;
+    const decayIterval = parseInt((configs.PARCEL_DECADING_INTERVAL).split('s')[0])
+    
+    const futureDeliveredReward = lowestValuedParcel.reward - (totalDistance * decayIterval);
+    
+    const futurePickUpReward = lowestValuedParcel.reward - (distanceToParcel * decayIterval);
+
+
+    if(totalDistance > futureDeliveredReward){
+        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver'})
+    } else {
+        agent.push({ desire: 'go_pick_up', args: [lowestValuedParcel], score: sumScore + futurePickUpReward, id: 'go_pick_up'})
+    
+    }
+}
+
+// get distance to next parcel and distance to closest delivery
