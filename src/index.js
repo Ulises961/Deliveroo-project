@@ -26,19 +26,13 @@ client.onMap((w, h, newMap) => {
     newMap.forEach(tile => {
         map[tile.x][tile.y] = tile
         map[tile.x][tile.y].fakeFloor = false
-    })
 
-    newMap.forEach(tile => {
+        validCells.push(tile)
+
         if (tile.delivery) {
             deliveryPoints.push({ x: tile.x, y: tile.y })
         }
-    });
-
-    newMap.forEach(tile => {
-        if (!tile.fakeFloor) {
-            validCells.push(tile)
-        }
-    });
+    })
 })
 
 /**
@@ -53,15 +47,7 @@ client.onConfig(config => {
     configs.AGENTS_OBSERVATION_DISTANCE = config.AGENTS_OBSERVATION_DISTANCE;
     configs.PARCELS_OBSERVATION_DISTANCE = config.PARCELS_OBSERVATION_DISTANCE;
     configs.PARCEL_DECADING_INTERVAL = config.PARCEL_DECADING_INTERVAL;
-
-    if (configs.PARCEL_DECADING_INTERVAL === 'infinite')
-        return;
-    setInterval(() => {
-        // Reduce the reward
-        carriedParcels.forEach(p => p.reward -= 1);
-        // Remove parcels with negative/0 reward
-        carriedParcels.filter(p => p.reward <= 0).forEach(p => carriedParcels.splice(carriedParcels.indexOf(p), 1));
-    }, decayIntervals[configs.PARCEL_DECADING_INTERVAL]);
+    configs.MOVEMENT_DURATION = config.MOVEMENT_DURATION;
 })
 
 /**

@@ -18,9 +18,12 @@ export default class RandomMove extends Plan {
         /**
          * Choose a cell that is outside the observation range, but not too far away
          */
+        const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE
+        await new Promise(res => setImmediate(res));
+        if (me.x % 1 != 0 || me.y % 1 != 0)
+            await updateMe();
         let validDestinations = validCells.filter(cell => {
             let distanceToCell = distance(cell, me);
-            const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE + 3
             return distanceToCell < MAX_DISTANCE;
         })
         let index = Math.floor(Math.random() * validDestinations.length);

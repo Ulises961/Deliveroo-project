@@ -1,6 +1,6 @@
 import Plan from './Plan.js';
 import client from '../utils/client.js';
-import { agentsMap, me, parcels, updateMe } from '../utils/utils.js';
+import { agentsMap, me, parcels, updateMe, carryParcel } from '../utils/utils.js';
 
 export default class FollowPath extends Plan {
     constructor() {
@@ -47,12 +47,14 @@ export default class FollowPath extends Plan {
                 await new Promise(res => client.onYou(res))
 
             // There are parcels in the current cell
-            if (Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)) {
+            let parcelInCell = Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)
+            if (parcelInCell) {
                 await client.pickup();
+                carryParcel(parcelInCell);
             }
 
             // There is an agent in the target cell
-            if (agentsMap.find(agent => target.x === me.x && target.y === me.y)) {
+            if (agentsMap.find(agent => target.x === agent.x && target.y === agent.y)) {
                 return false
             }
 

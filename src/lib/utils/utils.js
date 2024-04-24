@@ -73,19 +73,21 @@ const updateMe = async function updateMe() {
 const configs = {
     AGENTS_OBSERVATION_DISTANCE: 5,
     PARCELS_OBSERVATION_DISTANCE: 5,
-    PARCEL_DECADING_INTERVAL: '1s' // Possibilities: '1s', '2s', '5s', '10s', 'infinite'
+    PARCEL_DECADING_INTERVAL: '1s', // Possibilities: '1s', '2s', '5s', '10s', 'infinite'
+    MOVEMENT_DURATION: 50
 }
 
 /**
- * @type {[{id: string, reward: number}]}
+ * @type {[{id: string, reward: number, pickupTime: number}]}
  */
 const carriedParcels = [];
 
 const carryParcel = (parcel) => {
+    parcels.delete(parcel.id);
     if (carriedParcels.find(p => p.id === parcel.id)) {
         return;
     }
-    carriedParcels.push({ id: parcel.id, reward: parcel.reward });
+    carriedParcels.push({ id: parcel.id, reward: parcel.reward, pickupTime: Date.now() });
     parcels.delete(parcel.id);
 }
 

@@ -19,8 +19,13 @@ export function parcelsLoop(new_parcels) {
         // !WARNING: is the value being updated already during the parcelSensing? If so, the value is being decreased twice.
         parcelScoreInterval = setInterval(() => {
             parcels.forEach((parcel) => {
-                parcel.reward = Math.max(0, parcel.reward - 1)
-                if (parcel.reward == 0)
+                let secondsPassed = (Date.now() - parcel.discovery) / 1000 // Seconds passed since the parcel was discovered
+                let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+                // The new reward is the old reward minus the number of seconds passed divided by the decay interval. This is because if the decay is 2 seconds and 6 seconds have passed, the new reward should be oldReward - (6 / 2) = oldReward - 3
+                let decayedReward = Math.floor(parcel.reward - (secondsPassed / decay))
+
+                parcel.reward = decayedReward
+                if (parcel.reward <= 0)
                     parcels.delete(parcel.id)
                 updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
                 // console.log(parcels)
@@ -68,7 +73,7 @@ function removeOldParcels(new_parcels) {
 
     for (const parcel of oldParcels) {
         // If the parcel is in the observation range
-        if (distance(parcel, me) <= configs.PARCELS_OBSERVATION_DISTANCE) {
+        if (distance(parcel, me) < configs.PARCELS_OBSERVATION_DISTANCE) {
             // If the parcel doesn't exists anymore
             if (!new_parcels.includes(parcel.id)) {
                 parcels.delete(parcel.id)
@@ -121,9 +126,15 @@ function chooseBestOption() {
 }
 
 export function updateCarriedParcelsScore() {
-    let sumScore = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0)
+    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+
+    let sumScore = carriedParcels
+        .reduce((previous, current, index) =>
+            previous + Math.max(current.reward - ((Date.now() - current.pickupTime) / 1000 * decay), 0)
+            , 0)
     if (sumScore > 0) {
         let score = Math.max(computeDeliveryScore(sumScore, carriedParcels), 0)
+        console.log('updateCarriedParcelsScore', carriedParcels, score)
         agent.changeIntentionScore('go_deliver', carriedParcels, score, 'go_deliver')
     }
 }
@@ -134,8 +145,9 @@ export function updateCarriedParcelsScore() {
  */
 function computeDeliveryScore(sumScore, carriedParcels) {
     let distanceToDelivery = findClosestDelivery(null, me).distance;
-    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
-    return sumScore - (distanceToDelivery * decay * carriedParcels.length);
+    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
+    let decayRate = configs.MOVEMENT_DURATION / decay;
+    return sumScore - (distanceToDelivery * decayRate * carriedParcels.length);
 }
 
 /**
@@ -145,14 +157,15 @@ function computeDeliveryScore(sumScore, carriedParcels) {
 function computeParcelScore(parcel) {
     let distanceToParcel = distance(me, parcel);
     let distanceParcelToDelivery = findClosestDelivery(null, parcel).distance;
-    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
+    let decayRate = configs.MOVEMENT_DURATION / decay;
 
     let sumOfCarried = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0);
 
 
     // Reward from the carried parcels + the reward from the parcel - the distance to the parcel, considering the decay of the parcels carried and the distance from the parcel to the delivery.
     // Basically, it finds the theoretical reward that is achieved by picking up the parcel and delivering it, considering the decay of the parcels carried and the distance to the delivery.
-    let futureDeliveredReward = (sumOfCarried + parcel.reward) - (distanceToParcel * decay * carriedParcels.length + distanceParcelToDelivery * (carriedParcels.length + 1) * decay);
+    let futureDeliveredReward = (sumOfCarried + parcel.reward) - (distanceToParcel * decayRate * carriedParcels.length + distanceParcelToDelivery * (carriedParcels.length + 1) * decayRate);
 
     return futureDeliveredReward;
 }

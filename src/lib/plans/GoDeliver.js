@@ -43,7 +43,7 @@ export default class GoDeliver extends Plan {
                     await promise
                 let result = await client.putdown();
                 carriedParcels.length = 0;
-                agent.changeIntentionScore('go_deliver', [], -1, 'go_deliver');
+                agent.changeIntentionScore('go_deliver', [], 0, 'go_deliver');
                 return result
             }
             retries++;
