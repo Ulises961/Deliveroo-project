@@ -26,8 +26,7 @@ class Agent {
 
         if (sameIntention) {
             // Update the score
-            sameIntention.score = option.score;
-            this.sortIntentions()
+            this.changeIntentionScore(option.desire, option.args, option.score, option.id);
             return;
         }
 
@@ -80,6 +79,7 @@ class Agent {
         while (true) {
             // Consumes intention_queue if not empty
             if (this.intention_queue.length > 0) {
+                console.log(this.intention_queue.map(i => i.toString()))
                 // Current intention
                 const intention = this.intention_queue[0];
 

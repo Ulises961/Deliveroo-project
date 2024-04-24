@@ -16,12 +16,14 @@ export function parcelsLoop(new_parcels) {
      * Update the reward for the intention as well.
      */
     if (!parcelScoreInterval) {
+        // !WARNING: is the value being updated already during the parcelSensing? If so, the value is being decreased twice.
         parcelScoreInterval = setInterval(() => {
             parcels.forEach((parcel) => {
                 parcel.reward = Math.max(0, parcel.reward - 1)
                 if (parcel.reward == 0)
                     parcels.delete(parcel.id)
-                updateIntentionScore(parcel, parcel.reward * 2 - distance(parcel, me), parcel.id)
+                updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
+                // console.log(parcels)
             });
         }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
     }
@@ -73,7 +75,7 @@ function removeOldParcels(new_parcels) {
                 updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
                 parcels.set(parcel.id, new_parcels.get(parcel.id))
-                updateIntentionScore(parcel, parcel.reward * 2 - distance(parcel, me), parcel.id)
+                updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
             }
         }
     }
@@ -102,7 +104,7 @@ function chooseBestOption() {
             options.set(id, {
                 desire: 'go_pick_up',
                 args: [parcel],
-                score: parcel.reward - distance(parcel, me),
+                score: computeParcelScore(parcel),
                 id: id
             });
         }
@@ -116,43 +118,41 @@ function chooseBestOption() {
     if (options.size == 0) {
         agent.push({ desire: 'go_random', args: [], score: 1, id: 'go_random' })
     }
-
 }
 
 export function updateCarriedParcelsScore() {
     let sumScore = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0)
     if (sumScore > 0) {
-        decidePickupOrDeliver(sumScore, carriedParcels);
+        let score = Math.max(computeDeliveryScore(sumScore, carriedParcels), 0)
+        agent.changeIntentionScore('go_deliver', carriedParcels, score, 'go_deliver')
     }
 }
 
-function decidePickupOrDeliver(sumScore, carriedParcels) {
-    const lowestValuedParcel = carriedParcels.reduce((previous, current) => previous.reward < current.reward ? previous : current, carriedParcels[0]);
-
-    const nextParcel = Array.from(parcels.values()).reduce((previous, current) => previous.reward > current.reward ? previous : current, parcels.values().next().value);
-
-    if (!nextParcel) {
-        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver' })
-        return;
-    }
-
-    const distanceToParcel = distance(me, nextParcel);
-    const distanceParcelToDelivery = findClosestDelivery(null, nextParcel).distance;
-
-    const totalDistance = distanceParcelToDelivery + distanceToParcel;
-    const decayIterval = parseInt((configs.PARCEL_DECADING_INTERVAL).split('s')[0])
-
-    const futureDeliveredReward = lowestValuedParcel.reward - (totalDistance * decayIterval);
-
-    const futurePickUpReward = lowestValuedParcel.reward - (distanceToParcel * decayIterval);
-
-
-    if (totalDistance > futureDeliveredReward) {
-        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver' })
-    } else {
-        agent.push({ desire: 'go_pick_up', args: [lowestValuedParcel], score: sumScore + futurePickUpReward, id: 'go_pick_up' })
-
-    }
+/**
+ * futureDeliveryReward = [Sum of carried] - ([distance from delivery] * [decay] * [number of parcels])
+ * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
+ */
+function computeDeliveryScore(sumScore, carriedParcels) {
+    let distanceToDelivery = findClosestDelivery(null, me).distance;
+    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+    return sumScore - (distanceToDelivery * decay * carriedParcels.length);
 }
 
-// get distance to next parcel and distance to closest delivery
+/**
+ * futureDeliveryReward = [Sum of carried] - ([distance from delivery] * [decay] * [number of parcels])
+ * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
+ */
+function computeParcelScore(parcel) {
+    let distanceToParcel = distance(me, parcel);
+    let distanceParcelToDelivery = findClosestDelivery(null, parcel).distance;
+    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+
+    let sumOfCarried = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0);
+
+
+    // Reward from the carried parcels + the reward from the parcel - the distance to the parcel, considering the decay of the parcels carried and the distance from the parcel to the delivery.
+    // Basically, it finds the theoretical reward that is achieved by picking up the parcel and delivering it, considering the decay of the parcels carried and the distance to the delivery.
+    let futureDeliveredReward = (sumOfCarried + parcel.reward) - (distanceToParcel * decay * carriedParcels.length + distanceParcelToDelivery * (carriedParcels.length + 1) * decay);
+
+    return futureDeliveredReward;
+}
