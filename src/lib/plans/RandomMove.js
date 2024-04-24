@@ -23,6 +23,8 @@ export default class RandomMove extends Plan {
         if (me.x % 1 != 0 || me.y % 1 != 0)
             await updateMe();
         let validDestinations = validCells.filter(cell => {
+            if (cell.x === me.x && cell.y === me.y) 
+                return false;
             let distanceToCell = distance(cell, me);
             return distanceToCell < MAX_DISTANCE;
         })
