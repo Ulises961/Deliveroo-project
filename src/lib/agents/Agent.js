@@ -57,7 +57,6 @@ class Agent {
     }
 
     changeIntentionScore(desire, args, newScore, id) {
-        // TODO: this is not going to work for parcels, because the reward changes every time. Add an ID for the intention?
         let intention = this.intention_queue.find((i) => i.id === id);
         if (intention) {
             intention.score = newScore;
@@ -84,9 +83,6 @@ class Agent {
                 // Current intention
                 const intention = this.intention_queue[0];
 
-                // Is queued intention still valid? Do I still want to achieve it?
-                // TODO: Reasons to drop an intention:
-                // - A new intention has a higher priority -> postpone
                 if (intention.score <= 0) {
                     console.log('AgentLoop. Skipping intention because no more valid', intention.desire)
                     if (!fixedIntentions.includes(intention.desire)) {
@@ -94,13 +90,11 @@ class Agent {
                     }
                 }
 
-                 
                 // Start achieving intention
                 const achieved = await intention.achieve()
                 // Catch eventual error and continue
                 .catch(error => {
                     console.log('Failed intention', intention.predicate, 'with error:', error);
-                    this.intention_queue.splice(intention, 1);  
                 });
 
                 updateMe();
@@ -108,7 +102,7 @@ class Agent {
                 // Remove failed intentions from the queue    
                 if(!achieved){
                     console.log('Failed intention');
-                    this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);                    
+                    // this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);                    
                 }
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))

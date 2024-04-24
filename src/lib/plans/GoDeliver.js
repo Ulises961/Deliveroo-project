@@ -38,6 +38,7 @@ export default class GoDeliver extends Plan {
 
             if (path_completed) {
                 // Wait for the client to update the agent's position
+                await new Promise(res => setImmediate(res));
                 if (me.x % 1 != 0 || me.y % 1 != 0)
                     await promise
                 let result = await client.putdown();
