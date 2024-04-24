@@ -28,16 +28,16 @@ export default class AStar extends Plan {
         // Sometimes the map is not loaded yet
         if (map.length == 0)
             return []
-        if (cell.x > 0 && !AStar.isAgentInCell(cell.x - 1, cell.y) && !map[cell.x - 1][cell.y].fakeFloor) {
+        if (cell.x > 0 && !map[cell.x - 1][cell.y].fakeFloor) {
             neighbours.push(new Cell(cell.x - 1, cell.y))
         }
-        if (cell.x < map.length - 1 && !AStar.isAgentInCell(cell.x + 1, cell.y) && !map[cell.x + 1][cell.y].fakeFloor) {
+        if (cell.x < map.length - 1 && !map[cell.x + 1][cell.y].fakeFloor) {
             neighbours.push(new Cell(cell.x + 1, cell.y))
         }
-        if (cell.y > 0 && !AStar.isAgentInCell(cell.x, cell.y - 1) && !map[cell.x][cell.y - 1].fakeFloor) {
+        if (cell.y > 0 && !map[cell.x][cell.y - 1].fakeFloor) {
             neighbours.push(new Cell(cell.x, cell.y - 1))
         }
-        if (cell.y < map[0].length - 1 && !AStar.isAgentInCell(cell.x, cell.y + 1) && !map[cell.x][cell.y + 1].fakeFloor) {
+        if (cell.y < map[0].length - 1 && !map[cell.x][cell.y + 1].fakeFloor) {
             neighbours.push(new Cell(cell.x, cell.y + 1))
         }
         return neighbours
