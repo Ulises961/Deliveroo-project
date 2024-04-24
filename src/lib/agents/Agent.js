@@ -58,6 +58,8 @@ class Agent {
     changeIntentionScore(desire, args, newScore, id) {
         let intention = this.intention_queue.find((i) => i.id === id);
         if (intention) {
+            if (newScore === intention.score)
+                return;
             intention.score = newScore;
         } else {
             this.push({ desire: desire, args: args, score: newScore, id: id });
@@ -107,6 +109,8 @@ class Agent {
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))
                     this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
+                else
+                    intention.stop();
                 // this.intention_queue.shift();
             }
             // Postpone next iteration at setImmediate
