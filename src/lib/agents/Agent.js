@@ -1,74 +1,120 @@
 import Intention from '../intentions/Intention.js';
-import { parcels } from '../utils/utils.js';
+import client from '../utils/client.js';
+import { updateMe } from '../utils/utils.js';
+
 /**
  * Intention revision / execution loop
  */
 class Agent {
-
+    /**
+     * @type {Array<Intention>} intention_queue the queue of intentions, ordered by score
+     */
     intention_queue = new Array();
-    async push ( option ) {
-        
+
+    constructor() {
+    }
+    count = 0;
+    /**
+     * Pushes a new intention to the queue
+     * @param {{desire: string, args: [Object], score: number}} option the intention to be pushed
+     */
+    async push(option) {
+        // If the intention is already queued
+        let sameIntention = this.intention_queue.find((i) => {
+            return i.id === option.id
+        });
+
+        if (sameIntention) {
+            // Update the score
+            this.changeIntentionScore(option.desire, option.args, option.score, option.id);
+            return;
+        }
+
+        const intention = new Intention(option.desire, option.args, option.score, option.id);
+        this.intention_queue.push(intention);
+
         // Check if already queued
-        const last = this.intention_queue.at(this.intention_queue.length - 1);
-        if ( this.intention_queue.find( (i) => i.predicate.join(' ') === option.args.join(' ') && i.parent === option.desire ) )
-            return; // intention is already queued
 
-        console.log( 'Agent.push', option.args );
-        const intention = new Intention( option.desire, option.args );
-        this.intention_queue.push( intention );
-
-        // if (last) {
-        //     last.stop();
-        //     console.log('STOPPING LAST INTENTION')
-        // }
+        this.sortIntentions()
     }
 
-
-    #intention_queue = new Array();
-    get intention_queue () {
-        return this.#intention_queue;
+    sortIntentions() {
+        // Stop all intentions except the first one, in case they have started before discovering this new intention
+        this.intention_queue.forEach(i => i.stop());
+        // Remove intentions with negative score!
+        this.intention_queue = this.intention_queue.filter(i => i.score >= 0);
+        // Order the intentions by score (decreasing)
+        this.intention_queue.sort((a, b) => b.score - a.score);
     }
 
-    emptyIntentions () {
-        return this.#intention_queue = new Array();
+    get intention_queue() {
+        return this.intention_queue;
     }
 
-    async loop ( ) {
+    emptyIntentions() {
+        return this.intention_queue = new Array();
+    }
+
+    changeIntentionScore(desire, args, newScore, id) {
+        let intention = this.intention_queue.find((i) => i.id === id);
+        if (intention) {
+            if (newScore === intention.score)
+                return;
+            intention.score = newScore;
+        } else {
+            this.push({ desire: desire, args: args, score: newScore, id: id });
+        }
+        this.sortIntentions()
+    }
+
+    async loop() {
         this.emptyIntentions(); // Empty intentions queue
-        while ( true ) {
+
+
+        // Default intention, if there are no parcels or if the score for the others is negative, use this. 
+        this.intention_queue.push(new Intention('go_random', [], 1, 'go_random'));
+        this.intention_queue.push(new Intention('go_deliver', [], 0, 'go_deliver')); // Update score based on parcels held
+
+
+        const fixedIntentions = ['go_random', 'go_deliver'];
+
+        while (true) {
             // Consumes intention_queue if not empty
-            if ( this.intention_queue.length > 0 ) {
-                console.log('Agent.loop');
-            
+            if (this.intention_queue.length > 0) {
+                console.log(this.intention_queue.map(i => i.toString()))
                 // Current intention
                 const intention = this.intention_queue[0];
-                
-                // Is queued intention still valid? Do I still want to achieve it?
-                // TODO: Reasons to drop an intention:
-                // - A new intention has a higher priority -> postpone
-                // - The intention is no longer valid -> drop
-                
-                // TODO this hard-coded implementation is an example
-                let id = intention.predicate.id;
-                let p = parcels.get(id)
-                if ( p && p.carriedBy ) {
-                    console.log( 'Skipping intention because no more valid', intention.predicate.desire )
-                    continue;
+
+                if (intention.score <= 0) {
+                    console.log('AgentLoop. Skipping intention because no more valid', intention.desire)
+                    if (!fixedIntentions.includes(intention.desire)) {
+                        this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
+                    }
                 }
 
                 // Start achieving intention
-                await intention.achieve()
-                // Catch eventual error and continue
-                .catch( error => {
-                    console.log(error)
-                    console.log( 'Failed intention', ...intention.predicate, 'with error:', ...error )
-                } );
+                const achieved = await intention.achieve()
+                    // Catch eventual error and continue
+                    .catch(error => {
+                        console.log('Failed intention', intention.predicate, 'with error:', error);
+                    });
 
+                updateMe();
+
+                // Remove failed intentions from the queue    
+                if (!achieved) {
+                    console.log('Failed intention');
+                    // this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);                    
+                }
                 // Remove from the queue
-                this.intention_queue.shift();
-            } 
+                if (!fixedIntentions.includes(intention.desire))
+                    this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
+                else
+                    intention.stop();
+                // this.intention_queue.shift();
+            }
             // Postpone next iteration at setImmediate
-            await new Promise( res => setImmediate( res ) );
+            await new Promise(res => setImmediate(res));
         }
     }
 }

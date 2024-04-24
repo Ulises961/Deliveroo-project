@@ -56,7 +56,7 @@ function chooseBestOption() {
                 args: [parcel]
             });
         }
-            // options.push(['go_pick_up', parcel.x, parcel.y, parcel.id, agent]);
+        // options.push(['go_pick_up', parcel.x, parcel.y, parcel.id, agent]);
     }
 
     let best_option = findBestOption(options)
@@ -68,5 +68,5 @@ function chooseBestOption() {
     if (best_option)
         agent.push({ desire: best_option.desire, args: best_option.args })
     else
-        agent.push({desire: 'go_random', args: []})
+        agent.push({ desire: 'go_random', args: [] })
 }
