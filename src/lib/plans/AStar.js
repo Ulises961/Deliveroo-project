@@ -62,7 +62,7 @@ export default class AStar extends Plan {
      * @param {number} y - The y coordinate of the destination
      */
     async execute(x, y) {
-        let promise = new Promise(res => client.onYou(res)) 
+        let promise = new Promise(res => client.onYou(res))
         // Wait for the client to update the agent's position
         if (me.x % 1 != 0 || me.y % 1 != 0)
             await promise
@@ -83,7 +83,7 @@ export default class AStar extends Plan {
             if (current.x == agentPosition.x && current.y == agentPosition.y) {
                 return this.reconstructPath(cameFrom, current)
             }
-            
+
             queue = queue.slice(1)
 
 
@@ -101,6 +101,7 @@ export default class AStar extends Plan {
                 }
             }
             queue.sort((a, b) => fScore.get(a) - fScore.get(b))
+            await new Promise(res => setImmediate(res));
         }
         return []
     }

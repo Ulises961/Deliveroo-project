@@ -47,6 +47,7 @@ export default class GoDeliver extends Plan {
                 return result
             } 
             retries++;
+            await new Promise(res => setImmediate(res));
         }
         throw ['max retries reached, delivery not completed'];
     }

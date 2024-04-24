@@ -71,7 +71,7 @@ class Agent {
 
 
         // Default intention, if there are no parcels or if the score for the others is negative, use this. 
-        this.intention_queue.push(new Intention('go_random', [], 1, 'random'));
+        this.intention_queue.push(new Intention('go_random', [], 1, 'go_random'));
         this.intention_queue.push(new Intention('go_deliver', [], 0, 'go_deliver')); // Update score based on parcels held
 
      

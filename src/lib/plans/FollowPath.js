@@ -1,6 +1,6 @@
 import Plan from './Plan.js';
 import client from '../utils/client.js';
-import { me, parcels, updateMe } from '../utils/utils.js';
+import { agentsMap, me, parcels, updateMe } from '../utils/utils.js';
 
 export default class FollowPath extends Plan {
     constructor() {
@@ -14,6 +14,10 @@ export default class FollowPath extends Plan {
     async execute(path) {
         // const parcelsOnTheWay = Array.from(parcels.values()).map(p => path.filter(cell => cell.x === p.x && cell.y === p.y)).flat();
         // console.log('GoPickUp.execute: path ', path, ' parcelsOnTheWay ', parcelsOnTheWay);
+        if (!path || path.length == 0) {
+            return true;
+        }
+
         const target = path[path.length - 1];
 
         let retries = 0
@@ -37,12 +41,19 @@ export default class FollowPath extends Plan {
 
             const moved = await client.move(direction);
 
+            // Update positions
             updateMe();
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))
 
+            // There are parcels in the current cell
             if (Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)) {
                 await client.pickup();
+            }
+
+            // There is an agent in the target cell
+            if (agentsMap.find(agent => target.x === me.x && target.y === me.y)) {
+                return false
             }
 
             if (!moved) {
@@ -50,6 +61,8 @@ export default class FollowPath extends Plan {
                 // Re-compute path
                 path = await this.subIntention('a_star', [target.x, target.y]);
             }
+            // Let other stuff update
+            await new Promise(res => setImmediate(res));
         }
 
 
