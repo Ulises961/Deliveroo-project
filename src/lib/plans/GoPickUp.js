@@ -33,7 +33,7 @@ export default class GoPickUp extends Plan {
         if (this.stopped) throw ['stopped']; // if stopped then quit
 
         updateCarriedParcelsScore();
-        
+
         return true;
     }
 

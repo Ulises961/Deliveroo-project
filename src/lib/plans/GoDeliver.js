@@ -19,7 +19,7 @@ export default class GoDeliver extends Plan {
         const MAX_RETRIES = 5;
         while (!this.stopped && retries < MAX_RETRIES) {
             // console.log('GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
-            if (this.stopped) 
+            if (this.stopped)
                 throw ['stopped']; // if stopped then quit
 
             let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y]);
@@ -28,7 +28,7 @@ export default class GoDeliver extends Plan {
 
             let promise = new Promise(res => client.onYou(res)) // Wait for the client to update the agent's position
 
-            if (this.stopped) 
+            if (this.stopped)
                 throw ['stopped']; // if stopped then quit
             if (path.length === 0) {
                 // throw ['no path'];
@@ -45,7 +45,7 @@ export default class GoDeliver extends Plan {
                 carriedParcels.length = 0;
                 agent.changeIntentionScore('go_deliver', [], -1, 'go_deliver');
                 return result
-            } 
+            }
             retries++;
             await new Promise(res => setImmediate(res));
         }

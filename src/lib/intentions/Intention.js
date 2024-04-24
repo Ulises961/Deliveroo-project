@@ -10,7 +10,7 @@ export default class Intention extends Promise {
      * @type {number} the points assigned to this intention
      */
     #score
-    
+
     /**
      * @type {number} the id assigned to this intention
      */
@@ -126,13 +126,13 @@ export default class Intention extends Promise {
 
                 // plan is instantiated
                 this.#current_plan = planClass;
-                this.log('achieving intention',  planClass.name);
+                this.log('achieving intention', planClass.name);
                 // and plan is executed and result returned
                 try {
                     const plan_res = await this.#current_plan.execute(...this.predicate);
-                    this.log('succesful intention',  planClass.name, 'with result:', plan_res);
+                    this.log('succesful intention', planClass.name, 'with result:', plan_res);
                     console.log("--------------------------------------------------------------------------------------\n\n\n\n");
-                    
+
                     return plan_res
                     // or errors are caught so to continue with next plan
                 } catch (error) {

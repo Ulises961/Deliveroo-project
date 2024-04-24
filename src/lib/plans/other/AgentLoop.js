@@ -25,7 +25,7 @@ export function parcelsLoop(new_parcels) {
             });
         }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
     }
-    
+
     if (!carriedParcelsScoreInterval) {
         /**
          * Update the score of the carried parcels
@@ -109,49 +109,49 @@ function chooseBestOption() {
     }
 
     for (const parcel of options.values()) {
-        if(parcel.score > 0){
-            agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score, id: parcel.id})
+        if (parcel.score > 0) {
+            agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score, id: parcel.id })
         }
     }
     if (options.size == 0) {
-        agent.push({ desire: 'go_random', args: [], score: 1, id: 'go_random'})
+        agent.push({ desire: 'go_random', args: [], score: 1, id: 'go_random' })
     }
 
 }
 
 export function updateCarriedParcelsScore() {
-    let sumScore = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0)   
-    if (sumScore > 0){
-        decidePickupOrDeliver(sumScore,carriedParcels);
+    let sumScore = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0)
+    if (sumScore > 0) {
+        decidePickupOrDeliver(sumScore, carriedParcels);
     }
 }
 
-function decidePickupOrDeliver(sumScore,carriedParcels){
+function decidePickupOrDeliver(sumScore, carriedParcels) {
     const lowestValuedParcel = carriedParcels.reduce((previous, current) => previous.reward < current.reward ? previous : current, carriedParcels[0]);
 
     const nextParcel = Array.from(parcels.values()).reduce((previous, current) => previous.reward > current.reward ? previous : current, parcels.values().next().value);
 
-    if(!nextParcel){
-        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver'})
+    if (!nextParcel) {
+        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver' })
         return;
     }
 
     const distanceToParcel = distance(me, nextParcel);
     const distanceParcelToDelivery = findClosestDelivery(null, nextParcel).distance;
-  
+
     const totalDistance = distanceParcelToDelivery + distanceToParcel;
     const decayIterval = parseInt((configs.PARCEL_DECADING_INTERVAL).split('s')[0])
-    
+
     const futureDeliveredReward = lowestValuedParcel.reward - (totalDistance * decayIterval);
-    
+
     const futurePickUpReward = lowestValuedParcel.reward - (distanceToParcel * decayIterval);
 
 
-    if(totalDistance > futureDeliveredReward){
-        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver'})
+    if (totalDistance > futureDeliveredReward) {
+        agent.push({ desire: 'go_deliver', args: [], score: sumScore, id: 'go_deliver' })
     } else {
-        agent.push({ desire: 'go_pick_up', args: [lowestValuedParcel], score: sumScore + futurePickUpReward, id: 'go_pick_up'})
-    
+        agent.push({ desire: 'go_pick_up', args: [lowestValuedParcel], score: sumScore + futurePickUpReward, id: 'go_pick_up' })
+
     }
 }
 

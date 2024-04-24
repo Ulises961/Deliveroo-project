@@ -25,7 +25,7 @@ export default class FollowPath extends Plan {
         while (path.length > 0 && retries < MAX_RETRIES) {
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
-            
+
             await new Promise(res => setImmediate(res));
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))

@@ -20,7 +20,7 @@ class Agent {
      */
     async push(option) {
         // If the intention is already queued
-        let sameIntention = this.intention_queue.find((i) =>{
+        let sameIntention = this.intention_queue.find((i) => {
             return i.id === option.id
         });
 
@@ -74,7 +74,7 @@ class Agent {
         this.intention_queue.push(new Intention('go_random', [], 1, 'go_random'));
         this.intention_queue.push(new Intention('go_deliver', [], 0, 'go_deliver')); // Update score based on parcels held
 
-     
+
         const fixedIntentions = ['go_random', 'go_deliver'];
 
         while (true) {
@@ -92,15 +92,15 @@ class Agent {
 
                 // Start achieving intention
                 const achieved = await intention.achieve()
-                // Catch eventual error and continue
-                .catch(error => {
-                    console.log('Failed intention', intention.predicate, 'with error:', error);
-                });
+                    // Catch eventual error and continue
+                    .catch(error => {
+                        console.log('Failed intention', intention.predicate, 'with error:', error);
+                    });
 
                 updateMe();
-                
+
                 // Remove failed intentions from the queue    
-                if(!achieved){
+                if (!achieved) {
                     console.log('Failed intention');
                     // this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);                    
                 }

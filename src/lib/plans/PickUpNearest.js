@@ -1,6 +1,6 @@
 import Plan from './Plan.js';
 import client from '../utils/client.js';
-import {me} from '../utils/utils.js';
+import { me } from '../utils/utils.js';
 import logger from '../../utils/logger.js';
 
 export default class PickUpNearest extends Plan {
@@ -17,7 +17,7 @@ export default class PickUpNearest extends Plan {
         logger.debug('PickUpNearest.execute: predicate ', predicate, ' me ', me);
         let completed = false
         while (!completed) {
-            if (this.stopped) 
+            if (this.stopped)
                 throw ['stopped']; // if stopped then quit
             let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
             path = path.reverse();

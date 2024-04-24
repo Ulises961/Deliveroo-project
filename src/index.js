@@ -3,7 +3,7 @@ import {
     decayIntervals, agentsMap, GROUP, partner, me
 } from "./lib/utils/utils.js";
 import { agent } from "./lib/utils/agent.js";
-import client, {askPartnerId, passOwnId} from './lib/utils/client.js';
+import client, { askPartnerId, passOwnId } from './lib/utils/client.js';
 import { parcelsLoop } from './lib/plans/other/AgentLoop.js'
 import './lib/plans/other/Library.js'
 
@@ -75,16 +75,16 @@ client.onAgentsSensing(agents => {
 
 await updateMe();
 
-const partnerName = GROUP[0] === me.name? GROUP[1]: GROUP[0];
+const partnerName = GROUP[0] === me.name ? GROUP[1] : GROUP[0];
 
 askPartnerId(partnerName);
-client.socket.on('shout', msg => {  if(msg === me.name) passOwnId(me.id) });
+client.socket.on('shout', msg => { if (msg === me.name) passOwnId(me.id) });
 
-client.socket.on('say', (toId, msg) => {  
-    if(toId === me.id){
+client.socket.on('say', (toId, msg) => {
+    if (toId === me.id) {
         partner.id = msg.id;
         partner.name = msg.name;
-    } 
+    }
 });
 
 
