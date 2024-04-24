@@ -19,10 +19,10 @@ export function parcelsLoop(new_parcels) {
         // !WARNING: is the value being updated already during the parcelSensing? If so, the value is being decreased twice.
         parcelScoreInterval = setInterval(() => {
             parcels.forEach((parcel) => {
-                let secondsPassed = (Date.now() - parcel.discovery) / 1000 // Seconds passed since the parcel was discovered
-                let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+                let msPassed = Date.now() - parcel.discovery // Milliseconds passed since the parcel was discovered
+                let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
                 // The new reward is the old reward minus the number of seconds passed divided by the decay interval. This is because if the decay is 2 seconds and 6 seconds have passed, the new reward should be oldReward - (6 / 2) = oldReward - 3
-                let decayedReward = Math.floor(parcel.reward - (secondsPassed / decay))
+                let decayedReward = Math.floor(parcel.reward - (msPassed / decay))
 
                 parcel.reward = decayedReward
                 if (parcel.reward <= 0)
@@ -52,6 +52,12 @@ export function parcelsLoop(new_parcels) {
      */
     addNewParcels(new_parcels)
 
+    console.log('Parcels in memory:')
+
+    for (const parcel of parcels.values()) {
+        console.log(`(${parcel.id}, ${parcel.reward})`)
+    }
+    
     /**
      * Choose the best option, which can be a parcel, the delivery, or a random walk
      */
@@ -66,7 +72,8 @@ function updateIntentionScore(parcel, newScore, id) {
 }
 
 /**
- * Remove parcels that are in observation range, are in the map but are not in the new_parcels list (so they disappeared)
+ * Remove parcels that are in observation range, are in the map but are not in the new_parcels list 
+ * (so they disappeared, or they have been taken)
  */
 function removeOldParcels(new_parcels) {
     let oldParcels = parcels.values()
