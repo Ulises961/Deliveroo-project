@@ -12,7 +12,6 @@ export default class RandomMove extends Plan {
     }
 
     async execute(predicate) {
-        // TODO: choose from a cell right outside the vision, don't go too far.
         console.log('Executing RandomMove')
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
@@ -35,7 +34,7 @@ export default class RandomMove extends Plan {
 
         const complete = await this.subIntention('follow_path', [path]);
         if (complete) {
-            // return true;
+            return true;
         } else {
             throw ['path not completed'];
         }
