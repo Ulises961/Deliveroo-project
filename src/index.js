@@ -1,6 +1,7 @@
 import {
     map, deliveryPoints, validCells, updateMe, configs, carriedParcels,
-    decayIntervals, agentsMap, GROUP, partner, me
+    decayIntervals, agentsMap, GROUP, partner, me,
+    updateAgentsMap
 } from "./lib/utils/utils.js";
 import { agent } from "./lib/utils/agent.js";
 import client, { askPartnerId, passOwnId } from './lib/utils/client.js';
@@ -54,12 +55,9 @@ client.onConfig(config => {
  * Perceive the agents near us, and update the agents array with the new information
  * The old data is erased
  */
-client.onAgentsSensing(agents => {
-    agentsMap.length = 0;
-    agentsMap.push(...agents);
-});
 
-await updateMe();
+updateAgentsMap();
+updateMe();
 
 const partnerName = GROUP[0] === me.name ? GROUP[1] : GROUP[0];
 
