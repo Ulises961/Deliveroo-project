@@ -1,11 +1,11 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals } from '../../utils/utils.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 
 // TODO: update the reward based on the time passed
 
 let parcelScoreInterval = null;
-let carriedParcelsScoreInterval = null;
+export let carriedParcelsScoreInterval = null;
 
 /**
  * Options generation and filtering function
@@ -51,13 +51,7 @@ export function parcelsLoop(new_parcels) {
      * If there are new parcels, add them to the list
      */
     addNewParcels(new_parcels)
-
-    console.log('Parcels in memory:')
-
-    for (const parcel of parcels.values()) {
-        console.log(`(${parcel.id}, ${parcel.reward})`)
-    }
-    
+        
     /**
      * Choose the best option, which can be a parcel, the delivery, or a random walk
      */
@@ -112,7 +106,7 @@ function chooseBestOption() {
     */
     const options = new Map();
     for (const [id, parcel] of parcels.entries()) {
-        if (!parcel.carriedBy) {
+        if (!parcel.carriedBy && !parcelHasAgentCloser(parcel)) {
             options.set(id, {
                 desire: 'go_pick_up',
                 args: [parcel],
@@ -132,13 +126,22 @@ function chooseBestOption() {
     }
 }
 
+function parcelHasAgentCloser(parcel) {
+    updateAgentsMap();
+    let agents = getAgentsMap();
+    return agents.some(agent => distance(agent, parcel) < distance(me, parcel));
+}
+
 export function updateCarriedParcelsScore() {
     let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
 
     let sumScore = carriedParcels
-        .reduce((previous, current, index) =>
-            previous + Math.max(current.reward - ((Date.now() - current.pickupTime) / 1000 * decay), 0)
-            , 0)
+        .reduce((previous, current, index) => {
+            let currentScore = Math.max(current.reward - ((Date.now() - current.pickupTime) / 1000 * decay), 0);
+            currentScore = Math.ceil(currentScore);
+            return previous + currentScore
+        }, 0)
+
     if (sumScore > 0) {
         let score = Math.max(computeDeliveryScore(sumScore, carriedParcels), 0)
         console.log('updateCarriedParcelsScore', carriedParcels, score)
@@ -154,7 +157,7 @@ function computeDeliveryScore(sumScore, carriedParcels) {
     let distanceToDelivery = findClosestDelivery(null, me).distance;
     let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
     let decayRate = configs.MOVEMENT_DURATION / decay;
-    return sumScore - (distanceToDelivery * decayRate * carriedParcels.length);
+    return sumScore - Math.ceil(distanceToDelivery * decayRate * carriedParcels.length);
 }
 
 /**
@@ -164,7 +167,7 @@ function computeDeliveryScore(sumScore, carriedParcels) {
 function computeParcelScore(parcel) {
     let distanceToParcel = distance(me, parcel);
     let distanceParcelToDelivery = findClosestDelivery(null, parcel).distance;
-    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
+    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]  ; // Convert to seconds
     let decayRate = configs.MOVEMENT_DURATION / decay;
 
     let sumOfCarried = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0);
@@ -173,6 +176,5 @@ function computeParcelScore(parcel) {
     // Reward from the carried parcels + the reward from the parcel - the distance to the parcel, considering the decay of the parcels carried and the distance from the parcel to the delivery.
     // Basically, it finds the theoretical reward that is achieved by picking up the parcel and delivering it, considering the decay of the parcels carried and the distance to the delivery.
     let futureDeliveredReward = (sumOfCarried + parcel.reward) - (distanceToParcel * decayRate * carriedParcels.length + distanceParcelToDelivery * (carriedParcels.length + 1) * decayRate);
-
     return futureDeliveredReward;
 }
