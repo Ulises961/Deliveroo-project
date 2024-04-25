@@ -1,5 +1,5 @@
 import Plan from './Plan.js';
-import { me, map, euclideanDistance, agentsMap, validCells } from '../utils/utils.js';
+import { me, map, euclideanDistance, getAgentsMap, validCells, updateAgentsMap, agentsMap } from '../utils/utils.js';
 import client from '../utils/client.js';
 
 export default class AStar extends Plan {
@@ -14,8 +14,10 @@ export default class AStar extends Plan {
     /**
      * Check if an agent is in a cell, in case avoid it!
      */
-    static isAgentInCell(x, y) {
-        return agentsMap.find(agent => agent.x === x && agent.y === y)
+    isAgentInCell(x, y) {
+        updateAgentsMap();
+        const isInCell = getAgentsMap().find(agent => agent.x === x && agent.y === y)
+        return !!isInCell;
     }
 
     /**
@@ -27,19 +29,20 @@ export default class AStar extends Plan {
         let neighbours = []
         // Sometimes the map is not loaded yet
         if (map.length == 0)
-            return []
-        if (cell.x > 0 && !map[cell.x - 1][cell.y].fakeFloor) {
+        return []
+        if (cell.x > 0 && !map[cell.x - 1][cell.y].fakeFloor && !this.isAgentInCell(cell.x - 1, cell.y)) {
             neighbours.push(new Cell(cell.x - 1, cell.y))
         }
-        if (cell.x < map.length - 1 && !map[cell.x + 1][cell.y].fakeFloor) {
+        if (cell.x < map.length - 1 && !map[cell.x + 1][cell.y].fakeFloor && !this.isAgentInCell(cell.x + 1, cell.y)) {
             neighbours.push(new Cell(cell.x + 1, cell.y))
         }
-        if (cell.y > 0 && !map[cell.x][cell.y - 1].fakeFloor) {
+        if (cell.y > 0 && !map[cell.x][cell.y - 1].fakeFloor && !this.isAgentInCell(cell.x, cell.y - 1)) {
             neighbours.push(new Cell(cell.x, cell.y - 1))
         }
-        if (cell.y < map[0].length - 1 && !map[cell.x][cell.y + 1].fakeFloor) {
+        if (cell.y < map[0].length - 1 && !map[cell.x][cell.y + 1].fakeFloor && !this.isAgentInCell(cell.x, cell.y + 1)) {
             neighbours.push(new Cell(cell.x, cell.y + 1))
         }
+
         return neighbours
     }
 
@@ -52,7 +55,6 @@ export default class AStar extends Plan {
             current = cameFrom.get(current)
             totalPath.unshift(current)
         }
-        // console.log('Path found: ', totalPath);
         return totalPath
     }
 
@@ -67,6 +69,8 @@ export default class AStar extends Plan {
         if (me.x % 1 != 0 || me.y % 1 != 0)
             await promise
         let agentPosition = { x: me.x, y: me.y }
+
+        let closedSet = new Set(); // Add this line
 
         let queue = [new Cell(x, y)]
         let cameFrom = new Map()
@@ -85,7 +89,7 @@ export default class AStar extends Plan {
             }
 
             queue = queue.slice(1)
-
+            closedSet.add(current.toString())
 
             for (let neighbour of this.getNeighbours(current)) {
                 let tentativeGScore = gScore.get(current) + 1
@@ -95,11 +99,12 @@ export default class AStar extends Plan {
                     gScore.set(neighbour, tentativeGScore)
                     fScore.set(neighbour, gScore.get(neighbour) + euclideanDistance(neighbour, new Cell(agentPosition.x, agentPosition.y)))
 
-                    if (!queue.includes(neighbour)) {
+                    if (!includesNeighbour(queue,neighbour) && !closedSet.has(neighbour.toString())) {
                         queue.push(neighbour)
                     }
                 }
             }
+
             queue.sort((a, b) => fScore.get(a) - fScore.get(b))
             await new Promise(res => setImmediate(res));
         }
@@ -108,9 +113,17 @@ export default class AStar extends Plan {
 
 }
 
+function includesNeighbour(queue, neighbour) {
+    return queue.some(cell => cell.x === neighbour.x && cell.y === neighbour.y);
+}
+
 class Cell {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+    }
+
+    toString() {
+        return `${this.x},${this.y}`; // Add this method
     }
 }
