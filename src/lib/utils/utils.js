@@ -25,7 +25,7 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
 const findClosestDelivery = function findClosestDelivery(exception = null, startingPoint) {
     let closestDelivery = { point: null, distance: Infinity };
     deliveryPoints
-        .filter(deliveryPoint => deliveryPoint !== exception) // Filter out the exception
+    .filter(deliveryPoint =>  deliveryPoint.x !== exception?.x && deliveryPoint.y !== exception?.y) // Filter out the exception
         .reduce((acc, point) => { // Find the closest delivery point
             const dist = distance(startingPoint, point);
             if (dist < acc.distance) {
@@ -70,6 +70,34 @@ const updateMe = async function updateMe() {
     })
 };
 
+const updateAgentsMap = async function updateAgentsMap() {
+    return await new Promise(res => {
+        client.onAgentsSensing(agents => {
+            agents.forEach(agent => {
+                agentsMap.set(agent.id, agent);
+            });
+            res(agentsMap);
+        });
+    })
+};
+
+const setCarriedParcelsInterval = function setCarriedParcelsInterval() {
+    setInterval(() => {
+        parcels.forEach((parcel) => {
+            let msPassed = Date.now() - parcel.discovery // Milliseconds passed since the parcel was discovered
+            let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
+            // The new reward is the old reward minus the number of seconds passed divided by the decay interval. This is because if the decay is 2 seconds and 6 seconds have passed, the new reward should be oldReward - (6 / 2) = oldReward - 3
+            let decayedReward = Math.floor(parcel.reward - (msPassed / decay))
+
+            parcel.reward = decayedReward
+            if (parcel.reward <= 0)
+                parcels.delete(parcel.id)
+            updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
+            // console.log(parcels)
+        });
+    }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
+}
+
 const configs = {
     AGENTS_OBSERVATION_DISTANCE: 5,
     PARCELS_OBSERVATION_DISTANCE: 5,
@@ -91,14 +119,16 @@ const carryParcel = (parcel) => {
     parcels.delete(parcel.id);
 }
 
-const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000 };
+const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000, 'infinite': 1000};
 
 /**
  * The agents perceived by our agent
  * @type {[{id: string, x: number, y: number, name: string, score: number}]}
  */
-const agentsMap = []
-
+const agentsMap = new Map();
+const getAgentsMap = () => {
+    return Array.from(agentsMap.values());
+}
 const partner = { id: null, name: null };
 const GROUP = ['ulises', 'lorenzo'];
 
@@ -122,5 +152,8 @@ export {
     decayIntervals,
     agentsMap,
     partner,
-    GROUP
+    GROUP,
+    updateAgentsMap,
+    getAgentsMap,
+    setCarriedParcelsInterval
 };
