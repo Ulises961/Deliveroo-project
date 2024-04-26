@@ -81,28 +81,12 @@ const updateAgentsMap = async function updateAgentsMap() {
     })
 };
 
-const setCarriedParcelsInterval = function setCarriedParcelsInterval() {
-    setInterval(() => {
-        parcels.forEach((parcel) => {
-            let msPassed = Date.now() - parcel.discovery // Milliseconds passed since the parcel was discovered
-            let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
-            // The new reward is the old reward minus the number of seconds passed divided by the decay interval. This is because if the decay is 2 seconds and 6 seconds have passed, the new reward should be oldReward - (6 / 2) = oldReward - 3
-            let decayedReward = Math.floor(parcel.reward - (msPassed / decay))
-
-            parcel.reward = decayedReward
-            if (parcel.reward <= 0)
-                parcels.delete(parcel.id)
-            updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
-            // console.log(parcels)
-        });
-    }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
-}
-
 const configs = {
     AGENTS_OBSERVATION_DISTANCE: 5,
     PARCELS_OBSERVATION_DISTANCE: 5,
     PARCEL_DECADING_INTERVAL: '1s', // Possibilities: '1s', '2s', '5s', '10s', 'infinite'
-    MOVEMENT_DURATION: 50
+    MOVEMENT_DURATION: 50,
+    CLOCK: 50
 }
 
 /**
@@ -119,7 +103,7 @@ const carryParcel = (parcel) => {
     parcels.delete(parcel.id);
 }
 
-const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000, 'infinite': 1000};
+const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000};
 
 /**
  * The agents perceived by our agent
@@ -131,8 +115,6 @@ const getAgentsMap = () => {
 }
 const partner = { id: null, name: null };
 const GROUP = ['ulises', 'lorenzo'];
-
-
 
 export {
     distance,
@@ -154,6 +136,5 @@ export {
     partner,
     GROUP,
     updateAgentsMap,
-    getAgentsMap,
-    setCarriedParcelsInterval
+    getAgentsMap
 };

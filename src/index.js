@@ -49,6 +49,7 @@ client.onConfig(config => {
     configs.PARCELS_OBSERVATION_DISTANCE = config.PARCELS_OBSERVATION_DISTANCE;
     configs.PARCEL_DECADING_INTERVAL = config.PARCEL_DECADING_INTERVAL;
     configs.MOVEMENT_DURATION = config.MOVEMENT_DURATION;
+    configs.CLOCK = config.CLOCK;
 })
 
 /**
