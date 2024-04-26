@@ -24,13 +24,13 @@ export default class GoPickUp extends Plan {
         await this.subIntention('follow_path', [path]);
         let pickup = await client.pickup();
 
-        if (pickup.length > 0) {
-            let id = predicate.id
-            let reward = parcels.has(id) ? parcels.get(id).reward : predicate.reward
-            carryParcel({ id, reward });
-            parcels.delete(id);
-            agent.changeIntentionScore('go_pick_up', [predicate], -1, 'go_pick_up');
-        }
+        // if (pickup.length > 0) {
+        let id = predicate.id
+        let reward = parcels.has(id) ? parcels.get(id).reward : predicate.reward
+        carryParcel({ id, reward });
+        parcels.delete(id);
+        agent.changeIntentionScore('go_pick_up', [predicate], -1, 'go_pick_up');
+        // }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
 
