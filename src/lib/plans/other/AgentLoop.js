@@ -90,6 +90,11 @@ function removeOldParcels(new_parcels) {
                 updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
                 let newParcel = new_parcels.get(parcel.id)
+                // If the parcel is being carried, remove it from the map
+                if (newParcel.carriedBy) {
+                    parcels.delete(parcel.id);
+                    continue;
+                }
                 newParcel.discovery = Date.now()
                 newParcel.originalReward = newParcels.reward
                 parcels.set(parcel.id, newParcel)
