@@ -2,8 +2,6 @@
 import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 
-// TODO: update the reward based on the time passed
-
 let parcelScoreInterval = null;
 export let carriedParcelsScoreInterval = null;
 
@@ -84,18 +82,20 @@ async function removeOldParcels(new_parcels) {
         // If the parcel is in the observation range
         if (distance(parcel, me) < configs.PARCELS_OBSERVATION_DISTANCE) {
             // If the parcel doesn't exists anymore
-            if (!new_parcels.includes(parcel.id)) {
-                // parcels.delete(parcel.id)
-                // await updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
+            if (!new_parcels.some(new_parcel => new_parcel.id == parcel.id)) {
+                console.log('Parcel removed!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy, 'current array ', new_parcels)
+                parcels.delete(parcel.id)
+                await updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
-                let newParcel = new_parcels.get(parcel.id)
+                let newParcel = new_parcels.find(new_parcel => new_parcel.id === parcel.id)
                 // If the parcel is being carried, remove it from the map
                 if (newParcel.carriedBy) {
                     parcels.delete(parcel.id);
+                    await updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
                     continue;
                 }
                 newParcel.discovery = Date.now()
-                newParcel.originalReward = newParcels.reward
+                newParcel.originalReward = newParcel.reward
                 parcels.set(parcel.id, newParcel)
                 await updateIntentionScore(parcel, computeParcelScore(newParcel), parcel.id)
             }
@@ -115,8 +115,6 @@ function addNewParcels(new_parcels) {
         console.log('New parcel added!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy)
     }
 }
-
-
 
 async function chooseBestOption() {
     /**
