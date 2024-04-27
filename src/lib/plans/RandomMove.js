@@ -13,6 +13,7 @@ export default class RandomMove extends Plan {
 
     async execute(predicate) {
         console.log('Executing RandomMove')
+        this.stopped = false;
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
         /**

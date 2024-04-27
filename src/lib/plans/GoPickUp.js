@@ -20,7 +20,7 @@ export default class GoPickUp extends Plan {
         let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
      
         if (path.length === 0) {
-            agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+            // agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
 
             throw ['No path found'];
         }
@@ -28,13 +28,21 @@ export default class GoPickUp extends Plan {
         path = path.reverse();
         path.shift();
         await this.subIntention('follow_path', [path]);
-        await client.pickup();
+        let pickup = await client.pickup();
 
-        let id = predicate.id
-        let reward = parcels.has(id) ? parcels.get(id).reward : predicate.reward
-        carryParcel({ id, reward });
-        parcels.delete(id);
-        agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+        if (pickup.length > 0) {
+            pickup.forEach(parcelId => {
+                let parcel = parcels.get(parcelId);
+                carryParcel(parcel);
+                parcels.delete(parcelId);
+                agent.changeIntentionScore('go_pick_up', [parcel], -1, parcel.id);
+            
+            })
+            // let id = predicate.id
+            // let reward = parcels.has(id) ? parcels.get(id).reward : predicate.reward
+            // carryParcel({ id, reward });
+            // parcels.delete(id);
+        }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
 

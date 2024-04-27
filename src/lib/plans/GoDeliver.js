@@ -14,6 +14,7 @@ export default class GoDeliver extends Plan {
     }
 
     async execute(predicate) {
+        this.stopped = false;
         let closestDelivery = findClosestDelivery([], me);
         let retries = 0;
         const MAX_RETRIES = deliveryPoints.length * deliveryPoints.length * 2;
@@ -59,8 +60,11 @@ export default class GoDeliver extends Plan {
                 if (me.x % 1 != 0 || me.y % 1 != 0)
                     await promise
                 let result = await client.putdown();
-                carriedParcels.length = 0;
-                agent.changeIntentionScore('go_deliver', [], 0, 'go_deliver');
+                if (result.length > 0) {
+                    carriedParcels.length = 0;
+                    await agent.changeIntentionScore('go_deliver', [], 0, 'go_deliver');
+                }
+                
                 return result
             }
             retries++;

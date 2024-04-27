@@ -8,6 +8,10 @@ export default class Plan {
         return this.#stopped;
     }
 
+    set stopped(value) {
+        this.#stopped = value;
+    }
+
     #name;
     get name() {
         return this.#name;
@@ -22,6 +26,7 @@ export default class Plan {
         for (const i of this.#sub_intentions) {
             i.stop();
         }
+        this.#stopped = true;
     }
 
 

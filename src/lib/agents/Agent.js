@@ -26,25 +26,35 @@ class Agent {
 
         if (sameIntention) {
             // Update the score
-            this.changeIntentionScore(option.desire, option.args, option.score, option.id);
+            await this.changeIntentionScore(option.desire, option.args, option.score, option.id);
             return;
         }
+        console.log('Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
+        if (option.score < 0)
+            return;
 
         const intention = new Intention(option.desire, option.args, option.score, option.id);
         this.intention_queue.push(intention);
 
         // Check if already queued
 
-        this.sortIntentions()
+        await this.sortIntentions()
     }
 
-    sortIntentions() {
+    async sortIntentions() {
         // Stop all intentions except the first one, in case they have started before discovering this new intention
-        this.intention_queue.forEach(i => i.stop());
+        let currentIntention = this.intention_queue[0];
+
+        // this.intention_queue.forEach(i => i.stop());
         // Remove intentions with negative score!
         this.intention_queue = this.intention_queue.filter(i => i.score >= 0);
         // Order the intentions by score (decreasing)
         this.intention_queue.sort((a, b) => b.score - a.score);
+
+        if (currentIntention.id !== this.intention_queue[0].id) {
+            // If the current intention is not the first one, stop it
+            currentIntention.stop();
+        }
     }
 
     get intention_queue() {
@@ -55,16 +65,16 @@ class Agent {
         return this.intention_queue = new Array();
     }
 
-    changeIntentionScore(desire, args, newScore, id) {
+    async changeIntentionScore(desire, args, newScore, id) {
         let intention = this.intention_queue.find((i) => i.id === id);
         if (intention) {
             if (newScore === intention.score)
                 return;
             intention.score = newScore;
         } else {
-            this.push({ desire: desire, args: args, score: newScore, id: id });
+            await this.push({ desire: desire, args: args, score: newScore, id: id });
         }
-        this.sortIntentions()
+        await this.sortIntentions()
     }
 
     async loop() {
@@ -95,18 +105,18 @@ class Agent {
                 // Start achieving intention
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
-                    .catch(error => {
+                    .catch(async error => {
                         console.log('Failed intention', intention.toString(), 'with error:', error);
 
-                        if(intention.id === 'go_deliver') {
-                            this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
+                        if (intention.id === 'go_deliver') {
+                            await this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
                         } else if (intention.id === 'go_random') {
-                            this.changeIntentionScore(intention.desire, [...intention.predicate], 1, intention.id);
+                            await this.changeIntentionScore(intention.desire, [...intention.predicate], 1, intention.id);
                         }
                     });
 
                 updateMe();
-                
+
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))
                     this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
@@ -114,7 +124,7 @@ class Agent {
                     intention.stop();
                 // this.intention_queue.shift();
 
-        
+
             }
             // Postpone next iteration at setImmediate
             await new Promise(res => setImmediate(res));

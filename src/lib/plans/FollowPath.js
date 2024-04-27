@@ -12,6 +12,7 @@ export default class FollowPath extends Plan {
     }
 
     async execute(path) {
+        this.stopped = false;
         // const parcelsOnTheWay = Array.from(parcels.values()).map(p => path.filter(cell => cell.x === p.x && cell.y === p.y)).flat();
         // console.log('GoPickUp.execute: path ', path, ' parcelsOnTheWay ', parcelsOnTheWay);
         if (!path || path.length == 0) {
@@ -64,7 +65,8 @@ export default class FollowPath extends Plan {
                 path = await this.subIntention('a_star', [target.x, target.y]);
             }
             // Let other stuff update
-            await new Promise(res => setImmediate(res));
+            // await setImmediate(() => { });
+            // await updateParcelSensing();
         }
 
 
