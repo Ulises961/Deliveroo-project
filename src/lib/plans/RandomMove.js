@@ -18,7 +18,7 @@ export default class RandomMove extends Plan {
         /**
          * Choose a cell that is outside the observation range, but not too far away
          */
-        const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE
+        const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE * 1.8 
         await new Promise(res => setImmediate(res));
         if (me.x % 1 != 0 || me.y % 1 != 0)
             await updateMe();
@@ -34,6 +34,10 @@ export default class RandomMove extends Plan {
         let path = await this.subIntention('a_star', [destination.x, destination.y]);
         path.reverse();
         path.shift();
+        
+        if(path.length === 0) {
+            throw ['no path found'];
+        }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
 
