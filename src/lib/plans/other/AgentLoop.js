@@ -182,7 +182,7 @@ export function updateCarriedParcelsScore() {
 function computeDeliveryScore(sumScore, carriedParcels) {
     if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
         return sumScore
-    let distanceToDelivery = findClosestDelivery(null, me).distance;
+    let distanceToDelivery = findClosestDelivery([], me).distance;
     let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL];
     let decayRate = configs.MOVEMENT_DURATION / decay;
     return sumScore - (distanceToDelivery * decayRate * carriedParcels.length);
@@ -197,7 +197,7 @@ function computeParcelScore(parcel) {
         return parcel.reward + sumCarriedParcels()
 
     let distanceToParcel = distance(me, parcel);
-    let distanceParcelToDelivery = findClosestDelivery(null, parcel).distance;
+    let distanceParcelToDelivery = findClosestDelivery([], parcel).distance;
     let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
     const DECAY_IMPORTANCE = 3
     let decayRate = (configs.MOVEMENT_DURATION * 2 * DECAY_IMPORTANCE) / decay;
