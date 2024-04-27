@@ -1,6 +1,6 @@
 import Plan from './Plan.js';
 import client from '../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel } from '../utils/utils.js';
+import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../utils/utils.js';
 
 export default class FollowPath extends Plan {
     constructor() {
@@ -54,7 +54,7 @@ export default class FollowPath extends Plan {
             }
 
             // There is an agent in the target cell
-            if (agentsMap.find(agent => target.x === agent.x && target.y === agent.y)) {
+            if (getAgentsMap().find(agent => target.x === agent.x && target.y === agent.y)) {
                 return false
             }
 

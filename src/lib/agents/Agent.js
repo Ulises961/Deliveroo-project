@@ -1,6 +1,6 @@
 import Intention from '../intentions/Intention.js';
-import client from '../utils/client.js';
-import { updateMe } from '../utils/utils.js';
+import { updateCarriedParcelsScore } from '../plans/other/AgentLoop.js';
+import { carriedParcels, updateMe } from '../utils/utils.js';
 
 /**
  * Intention revision / execution loop
@@ -96,22 +96,25 @@ class Agent {
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
                     .catch(error => {
-                        console.log('Failed intention', intention.predicate, 'with error:', error);
+                        console.log('Failed intention', intention.toString(), 'with error:', error);
+
+                        if(intention.id === 'go_deliver') {
+                            this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
+                        } else if (intention.id === 'go_random') {
+                            this.changeIntentionScore(intention.desire, [...intention.predicate], 1, intention.id);
+                        }
                     });
 
                 updateMe();
-
-                // Remove failed intentions from the queue    
-                if (!achieved) {
-                    console.log('Failed intention');
-                    // this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);                    
-                }
+                
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))
                     this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
                 else
                     intention.stop();
                 // this.intention_queue.shift();
+
+        
             }
             // Postpone next iteration at setImmediate
             await new Promise(res => setImmediate(res));

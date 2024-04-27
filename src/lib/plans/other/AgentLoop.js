@@ -1,11 +1,11 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals } from '../../utils/utils.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 
 // TODO: update the reward based on the time passed
 
 let parcelScoreInterval = null;
-let carriedParcelsScoreInterval = null;
+export let carriedParcelsScoreInterval = null;
 
 /**
  * Options generation and filtering function
@@ -19,10 +19,15 @@ export function parcelsLoop(new_parcels) {
         // !WARNING: is the value being updated already during the parcelSensing? If so, the value is being decreased twice.
         parcelScoreInterval = setInterval(() => {
             parcels.forEach((parcel) => {
+                if (configs.PARCEL_DECADING_INTERVAL == 'infinite') {
+                    updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
+                    return;
+                }
+
                 let msPassed = Date.now() - parcel.discovery // Milliseconds passed since the parcel was discovered
                 let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
                 // The new reward is the old reward minus the number of seconds passed divided by the decay interval. This is because if the decay is 2 seconds and 6 seconds have passed, the new reward should be oldReward - (6 / 2) = oldReward - 3
-                let decayedReward = Math.floor(parcel.reward - (msPassed / decay))
+                let decayedReward = Math.floor(parcel.originalReward - (msPassed / decay))
 
                 parcel.reward = decayedReward
                 if (parcel.reward <= 0)
@@ -30,7 +35,7 @@ export function parcelsLoop(new_parcels) {
                 updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
                 // console.log(parcels)
             });
-        }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
+        }, configs.CLOCK)
     }
 
     if (!carriedParcelsScoreInterval) {
@@ -39,7 +44,7 @@ export function parcelsLoop(new_parcels) {
          */
         carriedParcelsScoreInterval = setInterval(() => {
             updateCarriedParcelsScore()
-        }, decayIntervals[configs.PARCEL_DECADING_INTERVAL])
+        }, configs.CLOCK)
     }
 
     /**
@@ -52,12 +57,6 @@ export function parcelsLoop(new_parcels) {
      */
     addNewParcels(new_parcels)
 
-    console.log('Parcels in memory:')
-
-    for (const parcel of parcels.values()) {
-        console.log(`(${parcel.id}, ${parcel.reward})`)
-    }
-    
     /**
      * Choose the best option, which can be a parcel, the delivery, or a random walk
      */
@@ -79,6 +78,10 @@ function removeOldParcels(new_parcels) {
     let oldParcels = parcels.values()
 
     for (const parcel of oldParcels) {
+        if (carriedParcels.find(p => p.id === parcel.id)) {
+            parcels.delete(parcel.id)
+            continue; // Skip carried parcels (they are not in the map anymore
+        }
         // If the parcel is in the observation range
         if (distance(parcel, me) < configs.PARCELS_OBSERVATION_DISTANCE) {
             // If the parcel doesn't exists anymore
@@ -86,8 +89,16 @@ function removeOldParcels(new_parcels) {
                 parcels.delete(parcel.id)
                 updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
-                parcels.set(parcel.id, new_parcels.get(parcel.id))
-                updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
+                let newParcel = new_parcels.get(parcel.id)
+                // If the parcel is being carried, remove it from the map
+                if (newParcel.carriedBy) {
+                    parcels.delete(parcel.id);
+                    continue;
+                }
+                newParcel.discovery = Date.now()
+                newParcel.originalReward = newParcels.reward
+                parcels.set(parcel.id, newParcel)
+                updateIntentionScore(parcel, computeParcelScore(newParcel), parcel.id)
             }
         }
     }
@@ -97,9 +108,10 @@ function removeOldParcels(new_parcels) {
  * Add parcels that are in the observation range, but not in the parcels map.
  */
 function addNewParcels(new_parcels) {
-    new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id))
+    new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id) && !parcel.carriedBy)
     for (const parcel of new_parcels) {
         parcel.discovery = Date.now()
+        parcel.originalReward = parcel.reward
         parcels.set(parcel.id, parcel)
     }
 }
@@ -112,7 +124,7 @@ function chooseBestOption() {
     */
     const options = new Map();
     for (const [id, parcel] of parcels.entries()) {
-        if (!parcel.carriedBy) {
+        if (!parcel.carriedBy && !parcelHasAgentCloser(parcel)) {
             options.set(id, {
                 desire: 'go_pick_up',
                 args: [parcel],
@@ -132,16 +144,33 @@ function chooseBestOption() {
     }
 }
 
-export function updateCarriedParcelsScore() {
-    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+function parcelHasAgentCloser(parcel) {
+    updateAgentsMap();
+    let agents = getAgentsMap();
+    return agents.some(agent => distance(agent, parcel) < distance(me, parcel));
+}
 
-    let sumScore = carriedParcels
-        .reduce((previous, current, index) =>
-            previous + Math.max(current.reward - ((Date.now() - current.pickupTime) / 1000 * decay), 0)
-            , 0)
+function sumCarriedParcels() {
+    return carriedParcels
+        .reduce((previous, current, index) => {
+            if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
+                return previous + current.reward
+            let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL];
+            let msPassed = Date.now() - current.pickupTime
+
+            let newReward = current.reward - (msPassed / decay)
+
+            return previous + Math.max(newReward, 0)
+        }, 0);
+}
+
+export function updateCarriedParcelsScore() {
+    // let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
+    carriedParcels.forEach(parcel => parcels.delete(parcel.id))
+
+    let sumScore = sumCarriedParcels()
     if (sumScore > 0) {
         let score = Math.max(computeDeliveryScore(sumScore, carriedParcels), 0)
-        console.log('updateCarriedParcelsScore', carriedParcels, score)
         agent.changeIntentionScore('go_deliver', carriedParcels, score, 'go_deliver')
     }
 }
@@ -151,8 +180,10 @@ export function updateCarriedParcelsScore() {
  * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
  */
 function computeDeliveryScore(sumScore, carriedParcels) {
-    let distanceToDelivery = findClosestDelivery(null, me).distance;
-    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
+    if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
+        return sumScore
+    let distanceToDelivery = findClosestDelivery([], me).distance;
+    let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL];
     let decayRate = configs.MOVEMENT_DURATION / decay;
     return sumScore - (distanceToDelivery * decayRate * carriedParcels.length);
 }
@@ -162,17 +193,21 @@ function computeDeliveryScore(sumScore, carriedParcels) {
  * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
  */
 function computeParcelScore(parcel) {
+    if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
+        return parcel.reward + sumCarriedParcels()
+
     let distanceToParcel = distance(me, parcel);
-    let distanceParcelToDelivery = findClosestDelivery(null, parcel).distance;
+    let distanceParcelToDelivery = findClosestDelivery([], parcel).distance;
     let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
-    let decayRate = configs.MOVEMENT_DURATION / decay;
+    const DECAY_IMPORTANCE = 3
+    let decayRate = (configs.MOVEMENT_DURATION * 2 * DECAY_IMPORTANCE) / decay;
 
-    let sumOfCarried = carriedParcels.reduce((previous, current, index) => previous + current.reward, 0);
-
+    let sumOfCarried = sumCarriedParcels();
 
     // Reward from the carried parcels + the reward from the parcel - the distance to the parcel, considering the decay of the parcels carried and the distance from the parcel to the delivery.
     // Basically, it finds the theoretical reward that is achieved by picking up the parcel and delivering it, considering the decay of the parcels carried and the distance to the delivery.
-    let futureDeliveredReward = (sumOfCarried + parcel.reward) - (distanceToParcel * decayRate * carriedParcels.length + distanceParcelToDelivery * (carriedParcels.length + 1) * decayRate);
+    let futureSumOnParcelSpot = sumOfCarried - distanceToParcel * decayRate * carriedParcels.length
+    let futureRewardOnDeliery = futureSumOnParcelSpot + parcel.reward - distanceParcelToDelivery * (carriedParcels.length + 1) * decayRate;
 
-    return futureDeliveredReward;
+    return futureRewardOnDeliery;
 }

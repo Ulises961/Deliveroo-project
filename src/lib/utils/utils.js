@@ -22,18 +22,20 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
-const findClosestDelivery = function findClosestDelivery(exception = null, startingPoint) {
+const findClosestDelivery = function findClosestDelivery(exceptions = [], startingPoint) {
     let closestDelivery = { point: null, distance: Infinity };
     deliveryPoints
-        .filter(deliveryPoint => deliveryPoint !== exception) // Filter out the exception
-        .reduce((acc, point) => { // Find the closest delivery point
-            const dist = distance(startingPoint, point);
-            if (dist < acc.distance) {
-                acc.distance = dist;
-                acc.point = point;
-            }
-            return acc;
-        }, closestDelivery);
+    .filter(deliveryPoint =>  {
+        return !exceptions.some(exception => deliveryPoint.x === exception?.x && deliveryPoint.y === exception?.y);
+    }) // Filter out the exceptions
+    .reduce((acc, point) => { // Find the closest delivery point
+        const dist = distance(startingPoint, point);
+        if (dist < acc.distance) {
+            acc.distance = dist;
+            acc.point = point;
+        }
+        return acc;
+    }, closestDelivery);
     return closestDelivery;
 }
 const validCells = [];
@@ -70,11 +72,23 @@ const updateMe = async function updateMe() {
     })
 };
 
+const updateAgentsMap = async function updateAgentsMap() {
+    return await new Promise(res => {
+        client.onAgentsSensing(agents => {
+            agents.forEach(agent => {
+                agentsMap.set(agent.id, agent);
+            });
+            res(agentsMap);
+        });
+    })
+};
+
 const configs = {
     AGENTS_OBSERVATION_DISTANCE: 5,
     PARCELS_OBSERVATION_DISTANCE: 5,
     PARCEL_DECADING_INTERVAL: '1s', // Possibilities: '1s', '2s', '5s', '10s', 'infinite'
-    MOVEMENT_DURATION: 50
+    MOVEMENT_DURATION: 50,
+    CLOCK: 50
 }
 
 /**
@@ -91,18 +105,18 @@ const carryParcel = (parcel) => {
     parcels.delete(parcel.id);
 }
 
-const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000 };
+const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000};
 
 /**
  * The agents perceived by our agent
  * @type {[{id: string, x: number, y: number, name: string, score: number}]}
  */
-const agentsMap = []
-
+const agentsMap = new Map();
+const getAgentsMap = () => {
+    return Array.from(agentsMap.values());
+}
 const partner = { id: null, name: null };
 const GROUP = ['ulises', 'lorenzo'];
-
-
 
 export {
     distance,
@@ -122,5 +136,7 @@ export {
     decayIntervals,
     agentsMap,
     partner,
-    GROUP
+    GROUP,
+    updateAgentsMap,
+    getAgentsMap
 };

@@ -128,18 +128,12 @@ export default class Intention extends Promise {
                 this.#current_plan = planClass;
                 this.log('achieving intention', planClass.name);
                 // and plan is executed and result returned
-                try {
-                    const plan_res = await this.#current_plan.execute(...this.predicate);
-                    this.log('succesful intention', planClass.name, 'with result:', plan_res);
-                    console.log("--------------------------------------------------------------------------------------\n\n\n\n");
+               
+                const plan_res = await this.#current_plan.execute(...this.predicate);
+                this.log('succesful intention', planClass.name, 'with result:', plan_res);
+                console.log("--------------------------------------------------------------------------------------\n\n\n\n");
 
-                    return plan_res
-                    // or errors are caught so to continue with next plan
-                } catch (error) {
-                    console.log(error)
-                    this.log('failed intention', 'with plan', planClass.name, 'with error:', error);
-                    return false;
-                }
+                return plan_res
             }
 
         }
