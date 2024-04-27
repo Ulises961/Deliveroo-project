@@ -1,5 +1,5 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap } from '../../utils/utils.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap, isCellReachable } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 
 let parcelScoreInterval = null;
@@ -107,7 +107,7 @@ async function removeOldParcels(new_parcels) {
  * Add parcels that are in the observation range, but not in the parcels map.
  */
 function addNewParcels(new_parcels) {
-    new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id) && !parcel.carriedBy)
+    new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id) && !parcel.carriedBy && isCellReachable(parcel.x, parcel.y))
     for (const parcel of new_parcels) {
         parcel.discovery = Date.now()
         parcel.originalReward = parcel.reward
