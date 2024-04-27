@@ -107,19 +107,14 @@ class Agent {
 
                 updateMe();
                 
-                this.intention_queue.forEach(i => {
-                    console.log(i.toString());
-                    if(i.id === 'go_deliver' && carriedParcels.length > 0) {
-                        updateCarriedParcelsScore();
-                    }
-                });
-
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))
                     this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
                 else
                     intention.stop();
-                // this.intention_queue.shift();    
+                // this.intention_queue.shift();
+
+        
             }
             // Postpone next iteration at setImmediate
             await new Promise(res => setImmediate(res));
