@@ -20,7 +20,7 @@ export default class GoPickUp extends Plan {
         let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
      
         if (path.length === 0) {
-            // agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+            agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
 
             throw ['No path found'];
         }
