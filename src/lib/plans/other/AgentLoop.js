@@ -8,7 +8,7 @@ export let carriedParcelsScoreInterval = null;
 /**
  * Options generation and filtering function
  */
-export async function parcelsLoop(new_parcels) {
+export function parcelsLoop(new_parcels) {
     /**
      * Update the score of the parcels, if the score reaches 0, delete it from the map.
      * Update the reward for the intention as well.
@@ -17,7 +17,7 @@ export async function parcelsLoop(new_parcels) {
         parcelScoreInterval = setInterval(() => {
             parcels.forEach(async (parcel) => {
                 if (configs.PARCEL_DECADING_INTERVAL == 'infinite') {
-                    await updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
+                    updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
                     return;
                 }
 
@@ -29,7 +29,7 @@ export async function parcelsLoop(new_parcels) {
                 parcel.reward = decayedReward
                 if (parcel.reward <= 0)
                     parcels.delete(parcel.id)
-                await updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
+                updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
                 // console.log(parcels)
             });
         }, configs.CLOCK)
@@ -40,7 +40,7 @@ export async function parcelsLoop(new_parcels) {
          * Update the score of the carried parcels
          */
         carriedParcelsScoreInterval = setInterval(async () => {
-            await updateCarriedParcelsScore()
+            updateCarriedParcelsScore()
         }, configs.CLOCK)
     }
 
@@ -57,14 +57,14 @@ export async function parcelsLoop(new_parcels) {
     /**
      * Choose the best option, which can be a parcel, the delivery, or a random walk
      */
-    await chooseBestOption()
+    chooseBestOption()
 }
 
 /**
  * Update the intention score for the parcel (if the parcel has a new score, so that the agent can reconsider)
  */
-async function updateIntentionScore(parcel, newScore, id) {
-    await agent.changeIntentionScore('go_pick_up', [parcel], newScore, id)
+function updateIntentionScore(parcel, newScore, id) {
+    agent.changeIntentionScore('go_pick_up', [parcel], newScore, id)
 }
 
 /**
@@ -85,19 +85,19 @@ async function removeOldParcels(new_parcels) {
             if (!new_parcels.some(new_parcel => new_parcel.id == parcel.id)) {
                 console.log('Parcel removed!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy, 'current array ', new_parcels)
                 parcels.delete(parcel.id)
-                await updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
+                updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
                 let newParcel = new_parcels.find(new_parcel => new_parcel.id === parcel.id)
                 // If the parcel is being carried, remove it from the map
                 if (newParcel.carriedBy) {
                     parcels.delete(parcel.id);
-                    await updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
+                    updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
                     continue;
                 }
                 newParcel.discovery = Date.now()
                 newParcel.originalReward = newParcel.reward
                 parcels.set(parcel.id, newParcel)
-                await updateIntentionScore(parcel, computeParcelScore(newParcel), parcel.id)
+                updateIntentionScore(parcel, computeParcelScore(newParcel), parcel.id)
             }
         }
     }
@@ -116,7 +116,7 @@ function addNewParcels(new_parcels) {
     }
 }
 
-async function chooseBestOption() {
+function chooseBestOption() {
     /**
     * Options generation
     */
@@ -134,7 +134,7 @@ async function chooseBestOption() {
 
     for (const parcel of options.values()) {
         if (parcel.score > 0) {
-            await agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score, id: parcel.id })
+            agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score, id: parcel.id })
         }
     }
     if (options.size == 0) {
@@ -162,14 +162,14 @@ function sumCarriedParcels() {
         }, 0);
 }
 
-export async function updateCarriedParcelsScore() {
+export function updateCarriedParcelsScore() {
     // let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL] / 1000; // Convert to seconds
     carriedParcels.forEach(parcel => parcels.delete(parcel.id))
 
     let sumScore = sumCarriedParcels()
     if (sumScore > 0) {
         let score = Math.max(computeDeliveryScore(sumScore, carriedParcels), 0)
-        await agent.changeIntentionScore('go_deliver', carriedParcels, score, 'go_deliver')
+        agent.changeIntentionScore('go_deliver', carriedParcels, score, 'go_deliver')
     }
 }
 
