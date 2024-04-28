@@ -1,6 +1,6 @@
 import {
-    map, deliveryPoints, validCells, updateMe, configs, carriedParcels,
-    decayIntervals, agentsMap, GROUP, partner, me,
+    map, deliveryPoints, validCells, updateMe, configs, 
+    GROUP, partner, me,
     updateAgentsMap
 } from "./lib/utils/utils.js";
 import { agent } from "./lib/utils/agent.js";

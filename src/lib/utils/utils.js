@@ -25,17 +25,17 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
 const findClosestDelivery = function findClosestDelivery(exceptions = [], startingPoint) {
     let closestDelivery = { point: null, distance: Infinity };
     deliveryPoints
-    .filter(deliveryPoint =>  {
-        return !exceptions.some(exception => deliveryPoint.x === exception?.x && deliveryPoint.y === exception?.y);
-    }) // Filter out the exceptions
-    .reduce((acc, point) => { // Find the closest delivery point
-        const dist = distance(startingPoint, point);
-        if (dist < acc.distance) {
-            acc.distance = dist;
-            acc.point = point;
-        }
-        return acc;
-    }, closestDelivery);
+        .filter(deliveryPoint => {
+            return !exceptions.some(exception => deliveryPoint.x === exception?.x && deliveryPoint.y === exception?.y);
+        }) // Filter out the exceptions
+        .reduce((acc, point) => { // Find the closest delivery point
+            const dist = distance(startingPoint, point);
+            if (dist < acc.distance) {
+                acc.distance = dist;
+                acc.point = point;
+            }
+            return acc;
+        }, closestDelivery);
     return closestDelivery;
 }
 const validCells = [];
@@ -61,6 +61,49 @@ const MAX_NUM_MOVEMENT_RETRIES = 5;
 const updateMe = async function updateMe() {
     return await new Promise(res => {
         client.onYou(({ id, name, x, y, score }) => {
+            /**
+             * First time the agent receives the position
+             */
+            if (reachableCells.length === 0) {
+                if (map.length === 0)
+                    return;
+                for (let i = 0; i < map.length; i++) {
+                    reachableCells[i] = []
+                    for (let j = 0; j < map[i].length; j++) {
+                        reachableCells[i][j] = false;
+                    }
+                }
+
+                const queue = [{ x: Math.ceil(x), y: Math.ceil(y) }];
+
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    if (reachableCells[current.x] === undefined)
+                        continue;
+                    if (reachableCells[current.x][current.y] === true)
+                        continue;
+                    reachableCells[current.x][current.y] = true;
+                    if (map[current.x][current.y].fakeFloor) {
+                        continue;
+                    }
+                    if (current.x + 1 < map.length && !map[current.x + 1][current.y].fakeFloor) {
+                        queue.push({ x: current.x + 1, y: current.y });
+                    }
+                    if (current.x - 1 >= 0 && !map[current.x - 1][current.y].fakeFloor) {
+                        queue.push({ x: current.x - 1, y: current.y });
+                    }
+                    if (current.y + 1 < map[current.x].length && !map[current.x][current.y + 1].fakeFloor) {
+                        queue.push({ x: current.x, y: current.y + 1 });
+                    }
+                    if (current.y - 1 >= 0 && !map[current.x][current.y - 1].fakeFloor) {
+                        queue.push({ x: current.x, y: current.y - 1 });
+                    }
+                }
+                let newValidCells = validCells.filter(cell => isCellReachable(cell.x, cell.y));
+                validCells.length = 0;
+                validCells.push(...newValidCells)
+            }
+
             me.id = id
             me.name = name
             me.x = x
@@ -105,7 +148,24 @@ const carryParcel = (parcel) => {
     parcels.delete(parcel.id);
 }
 
-const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000};
+const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000 };
+
+const reachableCells = []
+
+/**
+ * Returns whether a cell is reachable by the agent
+ * @param {number} x The x coordinate of the cell
+ * @param {number} y The y coordinate of the cell
+ */
+const isCellReachable = function (x, y) {
+    if (x % 1 == 0)
+        x = Math.ceil(x)
+    if (y % 1 == 0)
+        y = Math.ceil(y)
+    if (reachableCells[x] === undefined)
+        return false;
+    return reachableCells[x][y];
+}
 
 /**
  * The agents perceived by our agent
@@ -138,5 +198,6 @@ export {
     partner,
     GROUP,
     updateAgentsMap,
-    getAgentsMap
+    getAgentsMap,
+    isCellReachable
 };

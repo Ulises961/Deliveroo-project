@@ -1,8 +1,6 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap } from '../../utils/utils.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap, isCellReachable } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
-
-// TODO: update the reward based on the time passed
 
 let parcelScoreInterval = null;
 export let carriedParcelsScoreInterval = null;
@@ -16,9 +14,8 @@ export function parcelsLoop(new_parcels) {
      * Update the reward for the intention as well.
      */
     if (!parcelScoreInterval) {
-        // !WARNING: is the value being updated already during the parcelSensing? If so, the value is being decreased twice.
         parcelScoreInterval = setInterval(() => {
-            parcels.forEach((parcel) => {
+            parcels.forEach(async (parcel) => {
                 if (configs.PARCEL_DECADING_INTERVAL == 'infinite') {
                     updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
                     return;
@@ -42,7 +39,7 @@ export function parcelsLoop(new_parcels) {
         /**
          * Update the score of the carried parcels
          */
-        carriedParcelsScoreInterval = setInterval(() => {
+        carriedParcelsScoreInterval = setInterval(async () => {
             updateCarriedParcelsScore()
         }, configs.CLOCK)
     }
@@ -74,7 +71,7 @@ function updateIntentionScore(parcel, newScore, id) {
  * Remove parcels that are in observation range, are in the map but are not in the new_parcels list 
  * (so they disappeared, or they have been taken)
  */
-function removeOldParcels(new_parcels) {
+async function removeOldParcels(new_parcels) {
     let oldParcels = parcels.values()
 
     for (const parcel of oldParcels) {
@@ -85,18 +82,20 @@ function removeOldParcels(new_parcels) {
         // If the parcel is in the observation range
         if (distance(parcel, me) < configs.PARCELS_OBSERVATION_DISTANCE) {
             // If the parcel doesn't exists anymore
-            if (!new_parcels.includes(parcel.id)) {
+            if (!new_parcels.some(new_parcel => new_parcel.id == parcel.id)) {
+                console.log('Parcel removed!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy, 'current array ', new_parcels)
                 parcels.delete(parcel.id)
                 updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
-                let newParcel = new_parcels.get(parcel.id)
+                let newParcel = new_parcels.find(new_parcel => new_parcel.id === parcel.id)
                 // If the parcel is being carried, remove it from the map
                 if (newParcel.carriedBy) {
                     parcels.delete(parcel.id);
+                    updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
                     continue;
                 }
                 newParcel.discovery = Date.now()
-                newParcel.originalReward = newParcels.reward
+                newParcel.originalReward = newParcel.reward
                 parcels.set(parcel.id, newParcel)
                 updateIntentionScore(parcel, computeParcelScore(newParcel), parcel.id)
             }
@@ -108,15 +107,14 @@ function removeOldParcels(new_parcels) {
  * Add parcels that are in the observation range, but not in the parcels map.
  */
 function addNewParcels(new_parcels) {
-    new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id) && !parcel.carriedBy)
+    new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id) && !parcel.carriedBy && isCellReachable(parcel.x, parcel.y))
     for (const parcel of new_parcels) {
         parcel.discovery = Date.now()
         parcel.originalReward = parcel.reward
         parcels.set(parcel.id, parcel)
+        console.log('New parcel added!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy)
     }
 }
-
-
 
 function chooseBestOption() {
     /**

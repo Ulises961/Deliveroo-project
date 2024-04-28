@@ -1,6 +1,5 @@
 import Intention from '../intentions/Intention.js';
-import { updateCarriedParcelsScore } from '../plans/other/AgentLoop.js';
-import { carriedParcels, updateMe } from '../utils/utils.js';
+import { updateMe } from '../utils/utils.js';
 
 /**
  * Intention revision / execution loop
@@ -18,7 +17,7 @@ class Agent {
      * Pushes a new intention to the queue
      * @param {{desire: string, args: [Object], score: number}} option the intention to be pushed
      */
-    async push(option) {
+    push(option) {
         // If the intention is already queued
         let sameIntention = this.intention_queue.find((i) => {
             return i.id === option.id
@@ -29,22 +28,28 @@ class Agent {
             this.changeIntentionScore(option.desire, option.args, option.score, option.id);
             return;
         }
+        console.log('Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
+        if (option.score < 0)
+            return;
 
         const intention = new Intention(option.desire, option.args, option.score, option.id);
         this.intention_queue.push(intention);
-
-        // Check if already queued
-
         this.sortIntentions()
     }
 
     sortIntentions() {
         // Stop all intentions except the first one, in case they have started before discovering this new intention
-        this.intention_queue.forEach(i => i.stop());
+        let currentIntention = this.intention_queue[0];
+
         // Remove intentions with negative score!
         this.intention_queue = this.intention_queue.filter(i => i.score >= 0);
         // Order the intentions by score (decreasing)
         this.intention_queue.sort((a, b) => b.score - a.score);
+
+        if (currentIntention.id !== this.intention_queue[0].id) {
+            // If the current intention is not the first one, stop it
+            currentIntention.stop();
+        }
     }
 
     get intention_queue() {
@@ -95,10 +100,10 @@ class Agent {
                 // Start achieving intention
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
-                    .catch(error => {
+                    .catch(async error => {
                         console.log('Failed intention', intention.toString(), 'with error:', error);
 
-                        if(intention.id === 'go_deliver') {
+                        if (intention.id === 'go_deliver') {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
                         } else if (intention.id === 'go_random') {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 1, intention.id);
@@ -106,16 +111,14 @@ class Agent {
                     });
 
                 updateMe();
-                
+
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))
                     this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
                 else
                     intention.stop();
-                // this.intention_queue.shift();
-
-        
             }
+
             // Postpone next iteration at setImmediate
             await new Promise(res => setImmediate(res));
         }
