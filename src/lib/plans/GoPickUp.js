@@ -15,7 +15,7 @@ export default class GoPickUp extends Plan {
     }
 
     async execute(predicate) {
-        console.log('GoPickUp.execute: predicate ', predicate, ' me ', me);
+        // console.log('GoPickUp.execute: predicate ', predicate, ' me ', me);
 
         let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
      

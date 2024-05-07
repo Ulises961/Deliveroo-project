@@ -12,7 +12,7 @@ export default class RandomMove extends Plan {
     }
 
     async execute(predicate) {
-        console.log('Executing RandomMove')
+        // console.log('Executing RandomMove')
         this.stopped = false;
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
@@ -32,7 +32,7 @@ export default class RandomMove extends Plan {
         })
         let index = Math.floor(Math.random() * validDestinations.length);
         let destination = validDestinations[index];
-        console.log('RandomMove: destination', destination, index);
+        // console.log('RandomMove: destination', destination, index);
         let path = await this.subIntention('a_star', [destination.x, destination.y]);
         path.reverse();
         path.shift();

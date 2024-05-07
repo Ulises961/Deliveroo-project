@@ -62,15 +62,15 @@ updateMe();
 
 const partnerName = GROUP[0] === me.name ? GROUP[1] : GROUP[0];
 
-askPartnerId(partnerName);
-client.socket.on('shout', msg => { if (msg === me.name) passOwnId(me.id) });
+// askPartnerId(partnerName);
+// client.socket.on('shout', msg => { if (msg === me.name) passOwnId(me.id) });
 
-client.socket.on('say', (toId, msg) => {
-    if (toId === me.id) {
-        partner.id = msg.id;
-        partner.name = msg.name;
-    }
-});
+// client.socket.on('say', (toId, msg) => {
+//     if (toId === me.id) {
+//         partner.id = msg.id;
+//         partner.name = msg.name;
+//     }
+// });
 
 
 /**
