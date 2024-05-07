@@ -27,7 +27,7 @@ export default class GoDeliver extends Plan {
                 throw ['stopped']; // if stopped then quit
             
             if(!closestDelivery.point) {
-                console.log('GoDeliver.execute: no delivery points found');
+                // console.log('GoDeliver.execute: no delivery points found');
                 throw ['No delivery point'];
             }
 
@@ -40,7 +40,7 @@ export default class GoDeliver extends Plan {
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
                 triedDeliveryPoints.push(closestDelivery.point);
                 
-                console.log('GoDeliver.execute: new closestDelivery ', closestDelivery);
+                // console.log('GoDeliver.execute: new closestDelivery ', closestDelivery);
                 continue;
             }
 

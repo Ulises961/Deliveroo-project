@@ -34,7 +34,7 @@ function findBestOption(options) {
     for (const option of options) {
         if (option.desire == 'go_pick_up') {
             let current_d = distance(option.args[0], me)
-            console.log(current_d)
+            // console.log(current_d)
             if (current_d < nearest) {
                 best_option = option
                 nearest = current_d

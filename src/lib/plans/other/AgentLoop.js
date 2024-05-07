@@ -83,7 +83,7 @@ async function removeOldParcels(new_parcels) {
         if (distance(parcel, me) < configs.PARCELS_OBSERVATION_DISTANCE) {
             // If the parcel doesn't exists anymore
             if (!new_parcels.some(new_parcel => new_parcel.id == parcel.id)) {
-                console.log('Parcel removed!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy, 'current array ', new_parcels)
+                // console.log('Parcel removed!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy, 'current array ', new_parcels)
                 parcels.delete(parcel.id)
                 updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
             } else { // If the parcel exists, update it
@@ -112,7 +112,7 @@ function addNewParcels(new_parcels) {
         parcel.discovery = Date.now()
         parcel.originalReward = parcel.reward
         parcels.set(parcel.id, parcel)
-        console.log('New parcel added!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy)
+        // console.log('New parcel added!', parcel.id, parcel.reward, parcel.x, parcel.y, parcel.carriedBy)
     }
 }
 
