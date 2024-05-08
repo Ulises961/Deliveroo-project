@@ -1,5 +1,5 @@
 import Plan from './Plan.js';
-import { validCells, configs, distance, me, updateMe } from '../utils/utils.js';
+import { validCells, configs, distance, me, updateMe, logDebug } from '../utils/utils.js';
 
 export default class RandomMove extends Plan {
 
@@ -12,7 +12,6 @@ export default class RandomMove extends Plan {
     }
 
     async execute(predicate) {
-        // console.log('Executing RandomMove')
         this.stopped = false;
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
@@ -32,7 +31,7 @@ export default class RandomMove extends Plan {
         })
         let index = Math.floor(Math.random() * validDestinations.length);
         let destination = validDestinations[index];
-        // console.log('RandomMove: destination', destination, index);
+        logDebug('RandomMove: destination', destination, index);
         let path = await this.subIntention('a_star', [destination.x, destination.y]);
         path.reverse();
         path.shift();

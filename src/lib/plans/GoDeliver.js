@@ -1,6 +1,6 @@
 import Plan from './Plan.js';
 import client from '../utils/client.js';
-import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, getAgentsMap, map } from '../utils/utils.js';
+import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, getAgentsMap, map, logDebug } from '../utils/utils.js';
 import { agent } from '../utils/agent.js';
 
 export default class GoDeliver extends Plan {
@@ -22,12 +22,12 @@ export default class GoDeliver extends Plan {
         const triedDeliveryPoints = [closestDelivery.point];
 
         while (!this.stopped && retries < MAX_RETRIES) {
-            // console.log('GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
+            logDebug('GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
             
             if(!closestDelivery.point) {
-                // console.log('GoDeliver.execute: no delivery points found');
+                logDebug('GoDeliver.execute: no delivery points found');
                 throw ['No delivery point'];
             }
 
@@ -39,8 +39,6 @@ export default class GoDeliver extends Plan {
                 updateMe();
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
                 triedDeliveryPoints.push(closestDelivery.point);
-                
-                // console.log('GoDeliver.execute: new closestDelivery ', closestDelivery);
                 continue;
             }
 

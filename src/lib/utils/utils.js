@@ -1,5 +1,9 @@
 import Plan from '../plans/Plan.js';
 import client from './client.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 /**
  * Calculates the distance between two points.
  * @param {Object} param0 The first point, with properties x and y.
@@ -109,7 +113,6 @@ const updateMe = async function updateMe() {
             me.x = x
             me.y = y
             me.score = score
-            // console.log('utils.updateMe', me)
             res(me);
         });
     })
@@ -178,6 +181,14 @@ const getAgentsMap = () => {
 const partner = { id: null, name: null };
 const GROUP = ['ulises', 'lorenzo'];
 
+const DEBUG = process.env.DEBUG === 'true' || false;
+
+const logDebug = function logDebug(...args) {
+    if (DEBUG) {
+        logDebug(...args);
+    }
+}
+
 export {
     distance,
     updateMe,
@@ -199,5 +210,6 @@ export {
     GROUP,
     updateAgentsMap,
     getAgentsMap,
-    isCellReachable
+    isCellReachable,
+    logDebug
 };

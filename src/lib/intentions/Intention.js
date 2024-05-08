@@ -1,4 +1,4 @@
-import { plans } from '../utils/utils.js';
+import { logDebug, plans } from '../utils/utils.js';
 /**
  * Intention
  */
@@ -100,7 +100,7 @@ export default class Intention extends Promise {
         if (this.#desire && this.#desire.log) {
             this.#desire.log('\t', ...args)
         } else {
-            console.log(...args)
+            logDebug(...args)
         }
     }
 
@@ -128,10 +128,9 @@ export default class Intention extends Promise {
                 this.#current_plan = planClass;
                 // this.log('achieving intention', planClass.name);
                 // and plan is executed and result returned
-               
+
                 const plan_res = await this.#current_plan.execute(...this.predicate);
-                // this.log('succesful intention', planClass.name, 'with result:', plan_res);
-                // console.log("--------------------------------------------------------------------------------------\n\n\n\n");
+                logDebug('succesful intention', planClass.name, 'with result:', plan_res);
 
                 return plan_res
             }

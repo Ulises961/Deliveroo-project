@@ -1,6 +1,6 @@
 import Plan from './Plan.js';
 import client from '../utils/client.js';
-import { distance, me, deliveryPoints, parcels, carryParcel } from '../utils/utils.js';
+import { distance, me, deliveryPoints, parcels, carryParcel, logDebug } from '../utils/utils.js';
 import { agent } from '../utils/agent.js';
 import { updateCarriedParcelsScore } from './other/AgentLoop.js';
 
@@ -15,7 +15,7 @@ export default class GoPickUp extends Plan {
     }
 
     async execute(predicate) {
-        // console.log('GoPickUp.execute: predicate ', predicate, ' me ', me);
+        logDebug('GoPickUp.execute: predicate ', predicate, ' me ', me);
 
         let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
      

@@ -1,5 +1,5 @@
 import Intention from '../intentions/Intention.js';
-import { updateMe } from '../utils/utils.js';
+import { logDebug, updateMe } from '../utils/utils.js';
 
 /**
  * Intention revision / execution loop
@@ -28,7 +28,7 @@ class Agent {
             this.changeIntentionScore(option.desire, option.args, option.score, option.id);
             return;
         }
-        // console.log('Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
+        logDebug('Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
         if (option.score < 0)
             return;
 
@@ -86,12 +86,10 @@ class Agent {
         while (true) {
             // Consumes intention_queue if not empty
             if (this.intention_queue.length > 0) {
-                // console.log(this.intention_queue.map(i => i.toString()))
                 // Current intention
                 const intention = this.intention_queue[0];
 
                 if (intention.score <= 0) {
-                    // console.log('AgentLoop. Skipping intention because no more valid', intention.desire)
                     if (!fixedIntentions.includes(intention.desire)) {
                         this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
                     }
@@ -101,7 +99,7 @@ class Agent {
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
                     .catch(async error => {
-                        console.log('Failed intention', intention.toString(), 'with error:', error);
+                        logDebug('Failed intention', intention.toString(), 'with error:', error);
 
                         if (intention.id === 'go_deliver') {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
