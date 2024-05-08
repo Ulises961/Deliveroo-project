@@ -188,8 +188,11 @@ function computeDeliveryScore(sumScore, carriedParcels) {
  * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
  */
 function computeParcelScore(parcel) {
+    // In case the decay interval is infinite, just the reward for picking up the parcel, plus the reward from the carried parcels, and a little bit of cost for the distance, to prioritize the closest parcels.
+    // 1 / distance: The closer the parcel, the higher the score
+    // 1 - (1 / distance): The closer the parcel, the lower the score subtracted from the reward
     if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
-        return parcel.reward + sumCarriedParcels()
+        return parcel.reward + sumCarriedParcels() - (1 - (1 / distance(me, parcel)));
 
     let distanceToParcel = distance(me, parcel);
     let distanceParcelToDelivery = findClosestDelivery([], parcel).distance;
