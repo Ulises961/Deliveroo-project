@@ -185,7 +185,7 @@ const DEBUG = process.env.DEBUG === 'true' || false;
 
 const logDebug = function logDebug(...args) {
     if (DEBUG) {
-        logDebug(...args);
+        console.log(...args);
     }
 }
 
