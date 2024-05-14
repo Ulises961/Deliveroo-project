@@ -46,7 +46,7 @@ class Agent {
         // Order the intentions by score (decreasing)
         this.intention_queue.sort((a, b) => b.score - a.score);
 
-        if (currentIntention.id !== this.intention_queue[0].id) {
+        if (currentIntention.id !== this.intention_queue[0].id && currentIntention.id === 'go_random' && this.intention_queue[0].id !== 'go_random') {
             // If the current intention is not the first one, stop it
             currentIntention.stop();
         }

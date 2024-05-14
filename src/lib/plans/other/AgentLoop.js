@@ -119,7 +119,7 @@ function chooseBestOption() {
     */
     const options = new Map();
     for (const [id, parcel] of parcels.entries()) {
-        if (!parcel.carriedBy && !parcelHasAgentCloser(parcel)) {
+        if (!parcel.carriedBy) {
             options.set(id, {
                 desire: 'go_pick_up',
                 args: [parcel],
