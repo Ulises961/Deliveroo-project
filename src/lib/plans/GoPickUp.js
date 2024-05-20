@@ -2,7 +2,7 @@ import Plan from './Plan.js';
 import client from '../utils/client.js';
 import { distance, me, deliveryPoints, parcels, carryParcel, logDebug, partner } from '../utils/utils.js';
 import { agent } from '../utils/agent.js';
-import { updateCarriedParcelsScore } from './other/AgentLoop.js';
+import { updateCarriedParcelsScore, computeParcelScore } from './other/AgentLoop.js';
 
 export default class GoPickUp extends Plan {
 
@@ -17,12 +17,29 @@ export default class GoPickUp extends Plan {
     async execute(predicate) {
         logDebug('GoPickUp.execute: predicate ', predicate, ' me ', me);
 
-        let pickupMessage = {
-            type: 'pick_up',
-            parcelId: predicate.id,
-            position: me
+        if (partner.id) {
+
+            let question = {
+                type: 'pick_up',
+                parcelId: predicate.id,
+                deliveryScore: computeParcelScore(parcels.get(predicate.id))
+            }
+
+            // Wait for 500ms for a response from the partner, otherwise continue
+            try {
+                let response = await Promise.race([
+                    client.ask(partner.id, JSON.stringify(question)),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
+                ])
+    
+                if (response === 'no') {
+                    agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+                    return false;
+                }
+            } catch (e) {
+                logDebug('GoPickUp.execute: no response from partner');
+            }
         }
-        client.say(partner.id, JSON.stringify(pickupMessage)); // send message to partner
 
         let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
 

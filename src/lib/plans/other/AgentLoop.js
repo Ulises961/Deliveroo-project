@@ -181,6 +181,14 @@ export function updateCarriedParcelsScore() {
     }
 }
 
+export function getDeliveryScore() {
+    let sumScore = sumCarriedParcels()
+    if (sumScore > 0) {
+        return Math.max(computeDeliveryScore(sumScore, carriedParcels), 0)
+    }
+    return 0;
+}
+
 /**
  * futureDeliveryReward = [Sum of carried] - ([distance from delivery] * [decay] * [number of parcels])
  * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
@@ -198,7 +206,7 @@ function computeDeliveryScore(sumScore, carriedParcels) {
  * futureDeliveryReward = [Sum of carried] - ([distance from delivery] * [decay] * [number of parcels])
  * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
  */
-function computeParcelScore(parcel) {
+export function computeParcelScore(parcel) {
     // In case the decay interval is infinite, just the reward for picking up the parcel, plus the reward from the carried parcels, and a little bit of cost for the distance, to prioritize the closest parcels.
     // 1 / distance: The closer the parcel, the higher the score
     // 1 - (1 / distance): The closer the parcel, the lower the score subtracted from the reward
@@ -249,7 +257,7 @@ function sendMemory() {
 /**
  * Receive info from the other agent, so that they can be coordinated
  */
-client.onMsg((id, name, msg) => {
+client.onMsg((id, name, msg, reply) => {
     if (partner.id === null) {
         return;
     }
@@ -258,7 +266,7 @@ client.onMsg((id, name, msg) => {
         try {
             message = JSON.parse(msg)
         } catch (e) {
-            logDebug('Error parsing message from partner', e)
+            logDebug('Error parsing message from partner', msg, e)
             return;
         }
 
@@ -279,13 +287,25 @@ client.onMsg((id, name, msg) => {
             /**
              * Remove the parcel from the map if the other agent is picking it up
              */
-            console.log('Partner is picking up parcel', message.parcelId)
-            let parcelId = message.parcelId
-            blacklist.push(parcelId)
-            updateIntentionScore(null, -1, parcelId)
-            if (parcels.has(parcelId)) {
-                parcels.delete(parcelId)
+            let otherAgentReward = message.deliveryScore;
+            if (!parcels.has(message.parcelId)) { // I don't have the parcel -> let the other have it
+                reply('yes');
+                return;
             }
+            let thisAgentReward = computeParcelScore(parcels.get(message.parcelId));
+
+            if (otherAgentReward > thisAgentReward) { // the theoretical reward for the other is bigger than ours, let him have it.
+                reply('yes')
+                console.log('Partner is picking up parcel', message.parcelId)
+                let parcelId = message.parcelId
+                blacklist.push(parcelId)
+                updateIntentionScore(null, -1, parcelId)
+                if (parcels.has(parcelId)) {
+                    parcels.delete(parcelId)
+                }
+                return;
+            }
+            reply('no')
         }
         // else if (message.type === 'carrying') {
         //     /**
