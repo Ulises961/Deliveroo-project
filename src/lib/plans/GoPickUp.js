@@ -2,7 +2,7 @@ import Plan from './Plan.js';
 import client from '../utils/client.js';
 import { distance, me, deliveryPoints, parcels, carryParcel, logDebug, partner } from '../utils/utils.js';
 import { agent } from '../utils/agent.js';
-import { updateCarriedParcelsScore, computeParcelScore } from './other/AgentLoop.js';
+import { updateCarriedParcelsScore, computeParcelScore, blacklist } from './other/AgentLoop.js';
 
 export default class GoPickUp extends Plan {
 
@@ -21,8 +21,9 @@ export default class GoPickUp extends Plan {
 
             let question = {
                 type: 'pick_up',
-                parcelId: predicate.id,
-                deliveryScore: computeParcelScore(parcels.get(predicate.id))
+                parcel: predicate,
+                position: me,
+                distance: distance(me, predicate)
             }
 
             // Wait for 500ms for a response from the partner, otherwise continue
@@ -33,6 +34,7 @@ export default class GoPickUp extends Plan {
                 ])
     
                 if (response === 'no') {
+                    blacklist.push(predicate.id)
                     agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
                     return false;
                 }

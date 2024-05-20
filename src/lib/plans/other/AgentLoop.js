@@ -8,7 +8,7 @@ export let carriedParcelsScoreInterval = null;
 /**
  * List of parcels that have been "booked" by the other agent, do not consider them in the decision making
  */
-let blacklist = []
+export let blacklist = []
 let sharedParcels = []
 
 /**
@@ -287,14 +287,10 @@ client.onMsg((id, name, msg, reply) => {
             /**
              * Remove the parcel from the map if the other agent is picking it up
              */
-            let otherAgentReward = message.deliveryScore;
-            if (!parcels.has(message.parcelId)) { // I don't have the parcel -> let the other have it
-                reply('yes');
-                return;
-            }
-            let thisAgentReward = computeParcelScore(parcels.get(message.parcelId));
+            let otherAgentDistance = message.distance;
+            let thisAgentDistance = distance(me, message.parcel);
 
-            if (otherAgentReward > thisAgentReward) { // the theoretical reward for the other is bigger than ours, let him have it.
+            if (thisAgentDistance > otherAgentDistance) { // the theoretical reward for the other is bigger than ours, let him have it.
                 reply('yes')
                 console.log('Partner is picking up parcel', message.parcelId)
                 let parcelId = message.parcelId
@@ -307,20 +303,6 @@ client.onMsg((id, name, msg, reply) => {
             }
             reply('no')
         }
-        // else if (message.type === 'carrying') {
-        //     /**
-        //      * Delete the parcel if the other agent is carrying it
-        //      */
-        //     console.log('Partner is carrying parcels', message.parcels)
-        //     let parcelIds = message.parcels
-        //     parcelIds.forEach(parcelId => {
-        //         if (parcels.has(parcelId)) {
-        //             parcels.delete(parcelId)
-        //         }
-        //         // remove from the blacklist
-        //         blacklist = blacklist.filter(id => id !== parcelId)
-        //     })
-        // }
         partner.position = message.position
     }
 });
