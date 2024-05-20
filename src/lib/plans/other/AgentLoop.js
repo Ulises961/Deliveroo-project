@@ -1,9 +1,15 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap, isCellReachable } from '../../utils/utils.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap, isCellReachable, partner, logDebug } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
+import client from '../../utils/client.js';
 
 let parcelScoreInterval = null;
 export let carriedParcelsScoreInterval = null;
+/**
+ * List of parcels that have been "booked" by the other agent, do not consider them in the decision making
+ */
+let blacklist = []
+let sharedParcels = []
 
 /**
  * Options generation and filtering function
@@ -57,6 +63,11 @@ export function parcelsLoop(new_parcels) {
      * Choose the best option, which can be a parcel, the delivery, or a random walk
      */
     chooseBestOption()
+
+    /**
+     * Send the parcels to the other agent
+     */
+    sendMemory()
 }
 
 /**
@@ -105,7 +116,7 @@ async function removeOldParcels(new_parcels) {
  * Add parcels that are in the observation range, but not in the parcels map.
  */
 function addNewParcels(new_parcels) {
-    new_parcels = new_parcels.filter(parcel => !parcels.has(parcel.id) && !parcel.carriedBy && isCellReachable(parcel.x, parcel.y))
+    new_parcels = new_parcels.filter(parcel => !blacklist.includes(parcel.id) && !parcels.has(parcel.id) && !parcel.carriedBy && isCellReachable(parcel.x, parcel.y))
     for (const parcel of new_parcels) {
         parcel.discovery = Date.now()
         parcel.originalReward = parcel.reward
@@ -119,7 +130,7 @@ function chooseBestOption() {
     */
     const options = new Map();
     for (const [id, parcel] of parcels.entries()) {
-        if (!parcel.carriedBy) {
+        if (!parcel.carriedBy && !blacklist.includes(id)) {
             options.set(id, {
                 desire: 'go_pick_up',
                 args: [parcel],
@@ -209,3 +220,87 @@ function computeParcelScore(parcel) {
 
     return futureRewardOnDeliery;
 }
+
+/**
+ * Send the parcels to the other agent, so that they can be coordinated
+ */
+function sendMemory() {
+    // The partner doesn't exists
+    if (!partner.id)
+        return;
+
+    let parcelsToShare = [...parcels.values()].filter(parcel => !parcel.shared)
+
+    parcelsToShare = parcelsToShare.filter(parcel => !sharedParcels.includes(parcel.id))
+
+    if (parcelsToShare.length == 0)
+        return;
+
+    sharedParcels.push(...parcelsToShare.map(parcel => parcel.id))
+
+    let message = {
+        type: 'parcels',
+        data: parcelsToShare,
+        position: me
+    }
+    client.say(partner.id, JSON.stringify(message))
+}
+
+/**
+ * Receive info from the other agent, so that they can be coordinated
+ */
+client.onMsg((id, name, msg) => {
+    if (partner.id === null) {
+        return;
+    }
+    if (id === partner.id) {
+        let message = null;
+        try {
+            message = JSON.parse(msg)
+        } catch (e) {
+            logDebug('Error parsing message from partner', e)
+            return;
+        }
+
+        if (!message)
+            return;
+
+        if (message.type === 'parcels') {
+            /**
+             * Add the new parcels to the map
+             */
+            let new_parcels = message.data
+            console.log('Received parcels from partner', new_parcels)
+            new_parcels.forEach(parcel => {
+                parcel.shared = true; // The parcel was shared by the partner
+            })
+            addNewParcels(new_parcels)
+        } else if (message.type === 'pick_up') {
+            /**
+             * Remove the parcel from the map if the other agent is picking it up
+             */
+            console.log('Partner is picking up parcel', message.parcelId)
+            let parcelId = message.parcelId
+            blacklist.push(parcelId)
+            updateIntentionScore(null, -1, parcelId)
+            if (parcels.has(parcelId)) {
+                parcels.delete(parcelId)
+            }
+        }
+        // else if (message.type === 'carrying') {
+        //     /**
+        //      * Delete the parcel if the other agent is carrying it
+        //      */
+        //     console.log('Partner is carrying parcels', message.parcels)
+        //     let parcelIds = message.parcels
+        //     parcelIds.forEach(parcelId => {
+        //         if (parcels.has(parcelId)) {
+        //             parcels.delete(parcelId)
+        //         }
+        //         // remove from the blacklist
+        //         blacklist = blacklist.filter(id => id !== parcelId)
+        //     })
+        // }
+        partner.position = message.position
+    }
+});

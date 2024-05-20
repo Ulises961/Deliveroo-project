@@ -178,7 +178,7 @@ const agentsMap = new Map();
 const getAgentsMap = () => {
     return Array.from(agentsMap.values());
 }
-const partner = { id: null, name: null };
+const partner = { id: null, name: null, position: null };
 const GROUP = ['ulises', 'lorenzo'];
 
 const DEBUG = process.env.DEBUG === 'true' || false;
