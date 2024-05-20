@@ -58,19 +58,24 @@ client.onConfig(config => {
  */
 
 updateAgentsMap();
-updateMe();
 
-const partnerName = GROUP[0] === me.name ? GROUP[1] : GROUP[0];
+// Update the agent's information necessary to communicate with the partner
+await updateMe();
 
-// askPartnerId(partnerName);
-// client.socket.on('shout', msg => { if (msg === me.name) passOwnId(me.id) });
+const partnerName = GROUP[0] === client.name ? GROUP[1] : GROUP[0];
 
-// client.socket.on('say', (toId, msg) => {
-//     if (toId === me.id) {
-//         partner.id = msg.id;
-//         partner.name = msg.name;
-//     }
-// });
+// Both partners shout their names to each other only one hears the other. Then they communicate privately their ids
+askPartnerId(partnerName);
+
+// Handshake with the partner
+client.onMsg((id, name, msg) => {
+    if (name === partnerName && partner.id === null) {
+        partner.id = id;
+        partner.name = name;
+        passOwnId(id);
+        console.log(`Received message from ${name} with id ${id}: ${msg}, partner id: ${partner.id}, partner name: ${partner.name}`);
+    }
+});
 
 
 /**
