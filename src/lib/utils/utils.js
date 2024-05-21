@@ -185,7 +185,7 @@ const DEBUG = process.env.DEBUG === 'true' || false;
 const DEBUG_LEVEL = process.env.DEBUG_LEVEL || 0;
 
 const logDebug = function logDebug(level, ...args) {
-    if (DEBUG && DEBUG_LEVEL >= level) {
+    if (DEBUG && DEBUG_LEVEL <= level) {
         console.log(...args);
     }
 }
