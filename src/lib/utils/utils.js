@@ -51,7 +51,7 @@ const parcels = new Map();
 const me = {};
 
 /**
- * @type {[{x: number, y: number, delivery: boolean}]}
+ * @type {[{x: number, y: number, delivery: boolean, fakeFloor: boolean}]}
  */
 const map = [[]]
 
@@ -182,9 +182,10 @@ const partner = { id: null, name: null, position: null };
 const GROUP = ['ulises', 'lorenzo'];
 
 const DEBUG = process.env.DEBUG === 'true' || false;
+const DEBUG_LEVEL = process.env.DEBUG_LEVEL || 0;
 
-const logDebug = function logDebug(...args) {
-    if (DEBUG) {
+const logDebug = function logDebug(level, ...args) {
+    if (DEBUG && DEBUG_LEVEL >= level) {
         console.log(...args);
     }
 }
