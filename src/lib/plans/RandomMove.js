@@ -36,9 +36,17 @@ export default class RandomMove extends Plan {
                 return false;
             return true;
         })
+
+        if (validDestinations.length === 0) {
+            // I'm in the only parcel spawner? Stay here
+            while (!this.stopped) {
+                await new Promise(res => setImmediate(res));
+            }
+        }
+
         let index = Math.floor(Math.random() * validDestinations.length);
         let destination = validDestinations[index];
-        logDebug('RandomMove: destination', destination, index);
+        logDebug(0, 'RandomMove: destination', destination, index);
         let path = await this.subIntention('a_star', [destination.x, destination.y]);
         path.reverse();
         path.shift();

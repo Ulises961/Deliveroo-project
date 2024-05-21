@@ -15,7 +15,7 @@ class Agent {
     count = 0;
     /**
      * Pushes a new intention to the queue
-     * @param {{desire: string, args: [Object], score: number}} option the intention to be pushed
+     * @param {{desire: string, args: [Object], score: number, id: string}} option the intention to be pushed
      */
     push(option) {
         // If the intention is already queued
@@ -28,7 +28,7 @@ class Agent {
             this.changeIntentionScore(option.desire, option.args, option.score, option.id);
             return;
         }
-        logDebug('Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
+        logDebug(0, 'Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
         if (option.score < 0)
             return;
 
@@ -99,7 +99,7 @@ class Agent {
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
                     .catch(async error => {
-                        logDebug('Failed intention', intention.toString(), 'with error:', error);
+                        logDebug(0, 'Failed intention', intention.toString(), 'with error:', error);
 
                         if (intention.id === 'go_deliver') {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);

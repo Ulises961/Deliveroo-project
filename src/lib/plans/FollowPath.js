@@ -53,6 +53,9 @@ export default class FollowPath extends Plan {
                 carryParcel(parcelInCell);
             }
 
+            if (me?.x === target?.x && me?.y === target?.y)
+                return true;
+
             // There is an agent in the target cell
             if (getAgentsMap().find(agent => target.x === agent.x && target.y === agent.y)) {
                 return false
