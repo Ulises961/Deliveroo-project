@@ -1,6 +1,5 @@
 import Intention from '../intentions/Intention.js';
 import { logDebug, updateMe } from '../utils/utils.js';
-import { onlineSolver, PddlExecutor, PddlProblem, Beliefset, PddlDomain, PddlAction } from "@unitn-asa/pddl-client";
 
 /**
  * Intention revision / execution loop

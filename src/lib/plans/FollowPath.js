@@ -61,7 +61,7 @@ export default class FollowPath extends Plan {
             if (!moved) {
                 retries++;
                 // Re-compute path
-                path = await this.subIntention('path_finder', [target.x, target.y]);
+                path = await this.subIntention('a_star', [target.x, target.y]);
             }
         }
 
