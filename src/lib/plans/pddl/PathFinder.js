@@ -5,11 +5,11 @@ import fs from 'fs';
 
 export default class PathFinder extends Plan {
     constructor() {
-        super('path_finder');
+        super('find_path');
     }
 
     isApplicableTo(desire) {
-        return desire == 'path_finder';
+        return desire == 'find_path';
     }
 
     readFile(path) {
@@ -57,6 +57,7 @@ export default class PathFinder extends Plan {
             myBeliefset.declare(`at agent_${agent.id} t${Math.round(agent.x)}_${Math.round(agent.y)}`);
         });
 
+
         myBeliefset.declare(`at me t${me.x}_${me.y}`);
         myBeliefset.declare(`me me`);
 
@@ -80,9 +81,10 @@ export default class PathFinder extends Plan {
 
         pddlProblem.goals = `at me t${x}_${y}`;
         let problem = pddlProblem.toPddlString();
-        console.log(problem);
-        var plan = await onlineSolver(domain, problem);
-        console.log(plan);
-        return plan.map(p => p.action);
+        let plan = await onlineSolver(domain, problem);
+        if (!plan) {
+            throw ['no plan found'];
+        }
+        return plan.map(p => p.action.toLowerCase());
     }
 }

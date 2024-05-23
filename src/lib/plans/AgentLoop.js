@@ -1,6 +1,6 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap, isCellReachable } from '../../utils/utils.js';
-import { agent } from '../../utils/agent.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap, isCellReachable } from '../utils/utils.js';
+import { agent } from '../utils/agent.js';
 
 let parcelScoreInterval = null;
 export let carriedParcelsScoreInterval = null;

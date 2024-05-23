@@ -1,7 +1,7 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, getAgentsMap, map, logDebug } from '../utils/utils.js';
-import { agent } from '../utils/agent.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, getAgentsMap, map, logDebug } from '../../utils/utils.js';
+import { agent } from '../../utils/agent.js';
 
 export default class GoDeliver extends Plan {
 
@@ -31,7 +31,7 @@ export default class GoDeliver extends Plan {
                 throw ['No delivery point'];
             }
 
-            let path = await this.subIntention('', [closestDelivery.point.x, closestDelivery.point.y]);
+            let path = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y]);
             
             if (path.length === 0) {
                 retries++;
@@ -42,15 +42,12 @@ export default class GoDeliver extends Plan {
                 continue;
             }
 
-            path = path.reverse(); // Start from the current cell
-            path.shift(); // Remove the current cell
-
             let promise = new Promise(res => client.onYou(res)) // Wait for the client to update the agent's position
 
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
           
-            let path_completed = await this.subIntention('follow_path', [path]);
+            let path_completed = await this.subIntention('execute_path', [path]);
 
             if (path_completed) {
                 // Wait for the client to update the agent's position

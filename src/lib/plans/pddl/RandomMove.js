@@ -1,5 +1,5 @@
-import Plan from './Plan.js';
-import { validCells, configs, distance, me, updateMe, logDebug } from '../utils/utils.js';
+import Plan from '../Plan.js';
+import { validCells, configs, distance, me, updateMe, logDebug } from '../../utils/utils.js';
 
 export default class RandomMove extends Plan {
 
@@ -39,17 +39,15 @@ export default class RandomMove extends Plan {
         let index = Math.floor(Math.random() * validDestinations.length);
         let destination = validDestinations[index];
         logDebug('RandomMove: destination', destination, index);
-        let path = await this.subIntention('path_finder', [destination.x, destination.y]);
-        path.reverse();
-        path.shift();
-        
+        let path = await this.subIntention('find_path', [destination.x, destination.y]);
+
         if(path.length === 0) {
             throw ['no path found'];
         }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
 
-        const complete = await this.subIntention('follow_path', [path]);
+        const complete = await this.subIntention('execute_path', [path]);
         if (complete) {
             return true;
         } else {

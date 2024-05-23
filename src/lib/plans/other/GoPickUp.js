@@ -1,8 +1,8 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { distance, me, deliveryPoints, parcels, carryParcel, logDebug } from '../utils/utils.js';
-import { agent } from '../utils/agent.js';
-import { updateCarriedParcelsScore } from './other/AgentLoop.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { distance, me, deliveryPoints, parcels, carryParcel, logDebug } from '../../utils/utils.js';
+import { agent } from '../../utils/agent.js';
+import { updateCarriedParcelsScore } from '../AgentLoop.js';
 
 export default class GoPickUp extends Plan {
 
@@ -17,7 +17,7 @@ export default class GoPickUp extends Plan {
     async execute(predicate) {
         logDebug('GoPickUp.execute: predicate ', predicate, ' me ', me);
 
-        let path = await this.subIntention('path_finder', [predicate.x, predicate.y]);
+        let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
      
         if (path.length === 0) {
             agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);

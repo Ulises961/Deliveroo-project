@@ -1,14 +1,14 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../utils/utils.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { me, parcels, updateMe, carryParcel, getAgentsMap } from '../../utils/utils.js';
 
-export default class FollowPath extends Plan {
+export default class ExecutePath extends Plan {
     constructor() {
-        super('follow_path');
+        super('execute_path');
     }
 
     isApplicableTo(desire) {
-        return desire === 'follow_path'
+        return desire === 'execute_path'
     }
 
     async execute(path) {
@@ -19,7 +19,7 @@ export default class FollowPath extends Plan {
         }
 
         const target = path[path.length - 1];
-
+        console.log('target', target);
         let retries = 0
         const MAX_RETRIES = 5 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {
@@ -30,19 +30,9 @@ export default class FollowPath extends Plan {
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))
 
-            const currentCell = path.shift();
-            let direction = 'right';
-            if (me.x > currentCell.x)
-                direction = 'left';
-            else if (me.y > currentCell.y)
-                direction = 'down';
-            else if (me.y < currentCell.y)
-                direction = 'up';
-
+            let direction = path.shift();
             const moved = await client.move(direction);
 
-            // Update positions
-            updateMe();
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))
 
@@ -61,20 +51,14 @@ export default class FollowPath extends Plan {
             if (!moved) {
                 retries++;
                 // Re-compute path
-                path = await this.subIntention('path_finder', [target.x, target.y]);
+                path = await this.subIntention('find_path', [target.x, target.y]);
             }
         }
-
 
         if (retries === MAX_RETRIES) {
             return false;
         }
 
-
-        if (me?.x === target?.x && me?.y === target?.y) {
-            return true;
-        } else {
-            return false;
-        }
+       return true;
     }
 }

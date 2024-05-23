@@ -1,6 +1,6 @@
-import Plan from './Plan.js';
-import { me, map, euclideanDistance, getAgentsMap, validCells, updateAgentsMap, agentsMap } from '../utils/utils.js';
-import client from '../utils/client.js';
+import Plan from '../Plan.js';
+import { me, map, euclideanDistance, getAgentsMap, validCells, updateAgentsMap, agentsMap } from '../../utils/utils.js';
+import client from '../../utils/client.js';
 
 export default class AStar extends Plan {
     constructor() {
