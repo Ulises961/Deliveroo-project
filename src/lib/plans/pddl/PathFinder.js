@@ -1,4 +1,5 @@
-import { onlineSolver, PddlProblem, Beliefset } from "@unitn-asa/pddl-client";
+import { onlineSolver, Beliefset } from "@unitn-asa/pddl-client";
+import PddlProblem from "./PddlProblem.js";
 import { agentsMap, map, me, parcels, validCells } from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';
