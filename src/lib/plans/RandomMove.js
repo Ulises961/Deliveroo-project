@@ -39,7 +39,7 @@ export default class RandomMove extends Plan {
         let index = Math.floor(Math.random() * validDestinations.length);
         let destination = validDestinations[index];
         logDebug('RandomMove: destination', destination, index);
-        let path = await this.subIntention('a_star', [destination.x, destination.y]);
+        let path = await this.subIntention('path_finder', [destination.x, destination.y]);
         path.reverse();
         path.shift();
         

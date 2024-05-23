@@ -31,7 +31,7 @@ export default class GoDeliver extends Plan {
                 throw ['No delivery point'];
             }
 
-            let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y]);
+            let path = await this.subIntention('', [closestDelivery.point.x, closestDelivery.point.y]);
             
             if (path.length === 0) {
                 retries++;
