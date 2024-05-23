@@ -19,7 +19,7 @@ export default class PickUpNearest extends Plan {
         while (!completed) {
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
-            let path = await this.subIntention('a_star', [predicate.x, predicate.y]);
+            let path = await this.subIntention('path_finder', [predicate.x, predicate.y]);
             path = path.reverse();
             path.shift();
             if (this.stopped) throw ['stopped']; // if stopped then quit

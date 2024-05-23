@@ -2,13 +2,13 @@ import Plan from './Plan.js';
 import { me, map, euclideanDistance, getAgentsMap, validCells, updateAgentsMap, agentsMap } from '../utils/utils.js';
 import client from '../utils/client.js';
 
-export default class AStar extends Plan {
+export default class AStarOld extends Plan {
     constructor() {
-        super('a_star');
+        super('a_star_old');
     }
 
     isApplicableTo(desire) {
-        return desire == 'a_star';
+        return desire == 'a_star_old';
     }
 
     /**
