@@ -31,9 +31,11 @@ export default class PathFinder extends Plan {
 
         /** Problem */
         const myBeliefset = new Beliefset();
+
+        let margin = 3;
         let filteredCells = validCells.filter(cell => {
-            return (cell.x >= Math.min(me.x, x) && cell.x <= Math.max(me.x, x)) &&
-                (cell.y >= Math.min(me.y, y) && cell.y <= Math.max(me.y, y));
+            return (cell.x >= Math.min(me.x, x) - margin && cell.x <= Math.max(me.x, x) + margin) &&
+                (cell.y >= Math.min(me.y, y) - margin && cell.y <= Math.max(me.y, y) + margin);
         });
 
         filteredCells

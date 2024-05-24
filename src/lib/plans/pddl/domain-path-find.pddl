@@ -14,8 +14,6 @@
         (down ?t1 ?t2)
         (carry ?a ?p)
         (free ?p)
-        (higher_score ?p1 ?p2)
-        (closer ?p1 ?p2)
     )
     
     (:action right
