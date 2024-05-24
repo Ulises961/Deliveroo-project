@@ -1,6 +1,6 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../utils/utils.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../../utils/utils.js';
 
 export default class FollowPath extends Plan {
     constructor() {
@@ -61,7 +61,7 @@ export default class FollowPath extends Plan {
             if (!moved) {
                 retries++;
                 // Re-compute path
-                path = await this.subIntention('a_star', [target.x, target.y]);
+                path = await this.subIntention('path_finder', [target.x, target.y]);
             }
         }
 

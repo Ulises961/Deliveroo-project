@@ -1,7 +1,7 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, getAgentsMap, map, logDebug } from '../utils/utils.js';
-import { agent } from '../utils/agent.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, logDebug } from '../../utils/utils.js';
+import { agent } from '../../utils/agent.js';
 
 export default class GoDeliver extends Plan {
 

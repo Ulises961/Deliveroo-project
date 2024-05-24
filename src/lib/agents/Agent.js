@@ -31,7 +31,7 @@ class Agent {
         logDebug('Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
         if (option.score < 0)
             return;
-
+        
         const intention = new Intention(option.desire, option.args, option.score, option.id);
         this.intention_queue.push(intention);
         this.sortIntentions()
