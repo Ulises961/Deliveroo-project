@@ -197,7 +197,7 @@ function computeParcelScore(parcel) {
     let distanceToParcel = distance(me, parcel);
     let distanceParcelToDelivery = findClosestDelivery([], parcel).distance;
     let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
-    const DECAY_IMPORTANCE = 3
+    const DECAY_IMPORTANCE = 5
     let decayRate = (configs.MOVEMENT_DURATION * 2 * DECAY_IMPORTANCE) / decay;
 
     let sumOfCarried = sumCarriedParcels();
