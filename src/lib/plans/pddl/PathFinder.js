@@ -92,12 +92,12 @@ export default class PathFinder extends Plan {
         let problem = pddlProblem.toPddlString();
         let plan = await onlineSolver(domain, problem);
         if (!plan) {
-            throw ['no plan found'];
+            return [];
         }
         return plan.map(p => p.action.toLowerCase());
     }
 
-        /**
+    /**
      * Check if an agent is in a cell, in case avoid it!
      */
         isAgentInCell(x, y) {
