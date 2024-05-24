@@ -1,5 +1,5 @@
 import Plan from './Plan.js';
-import { me, map, euclideanDistance, getAgentsMap, validCells, updateAgentsMap, agentsMap } from '../utils/utils.js';
+import { me, map, euclideanDistance, getAgentsMap, validCells, agentsMap } from '../utils/utils.js';
 import client from '../utils/client.js';
 
 export default class AStar extends Plan {
@@ -15,7 +15,6 @@ export default class AStar extends Plan {
      * Check if an agent is in a cell, in case avoid it!
      */
     isAgentInCell(x, y) {
-        updateAgentsMap();
         const isInCell = getAgentsMap().find(agent => agent.x === x && agent.y === y)
         return !!isInCell;
     }

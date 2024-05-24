@@ -1,5 +1,5 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, updateAgentsMap, getAgentsMap, isCellReachable, partner, logDebug } from '../../utils/utils.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, getAgentsMap, isCellReachable, partner, logDebug } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 import client from '../../utils/client.js';
 
@@ -151,7 +151,6 @@ function chooseBestOption() {
 }
 
 function parcelHasAgentCloser(parcel) {
-    updateAgentsMap();
     let agents = getAgentsMap();
     return agents.some(agent => distance(agent, parcel) < distance(me, parcel));
 }
