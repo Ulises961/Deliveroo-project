@@ -63,12 +63,6 @@ export default class GoPickUp extends Plan {
                 parcels.delete(parcelId);
                 agent.changeIntentionScore('go_pick_up', [parcel], -1, parcel.id);
             })
-            let carryMessage = {
-                type: 'carrying',
-                parcels: pickup.map(p => p.id),
-                position: me
-            }
-            client.say(partner.id, JSON.stringify(carryMessage)); // send message to partner
         }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit

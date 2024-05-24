@@ -261,48 +261,47 @@ client.onMsg((id, name, msg, reply) => {
     if (partner.id === null) {
         return;
     }
-    if (id === partner.id) {
-        let message = null;
-        try {
-            message = JSON.parse(msg)
-        } catch (e) {
-            logDebug('Error parsing message from partner', msg, e)
-            return;
-        }
-
-        if (!message)
-            return;
-
-        if (message.type === 'parcels') {
-            /**
-             * Add the new parcels to the map
-             */
-            let new_parcels = message.data
-            console.log('Received parcels from partner', new_parcels)
-            new_parcels.forEach(parcel => {
-                parcel.shared = true; // The parcel was shared by the partner
-            })
-            addNewParcels(new_parcels)
-        } else if (message.type === 'pick_up') {
-            /**
-             * Remove the parcel from the map if the other agent is picking it up
-             */
-            let otherAgentDistance = message.distance;
-            let thisAgentDistance = distance(me, message.parcel);
-
-            if (thisAgentDistance > otherAgentDistance) { // the theoretical reward for the other is bigger than ours, let him have it.
-                reply('yes')
-                console.log('Partner is picking up parcel', message.parcelId)
-                let parcelId = message.parcelId
-                blacklist.push(parcelId)
-                updateIntentionScore(null, -1, parcelId)
-                if (parcels.has(parcelId)) {
-                    parcels.delete(parcelId)
-                }
-                return;
-            }
-            reply('no')
-        }
-        partner.position = message.position
+    if (id !== partner.id)
+        return;
+    let message = null;
+    try {
+        message = JSON.parse(msg)
+    } catch (e) {
+        return;
     }
+
+    if (!message)
+        return;
+
+    if (message.type === 'parcels') {
+        /**
+         * Add the new parcels to the map
+         */
+        let new_parcels = message.data
+        console.log('Received parcels from partner', new_parcels)
+        new_parcels.forEach(parcel => {
+            parcel.shared = true; // The parcel was shared by the partner
+        })
+        addNewParcels(new_parcels)
+    } else if (message.type === 'pick_up') {
+        /**
+         * Remove the parcel from the map if the other agent is picking it up
+         */
+        let otherAgentDistance = message.distance;
+        let thisAgentDistance = distance(me, message.parcel);
+
+        if (thisAgentDistance > otherAgentDistance) { // the theoretical reward for the other is bigger than ours, let him have it.
+            reply('yes')
+            console.log('Partner is picking up parcel', message.parcel)
+            let parcelId = message.parcel.id
+            blacklist.push(parcelId)
+            updateIntentionScore(null, -1, parcelId)
+            if (parcels.has(parcelId)) {
+                parcels.delete(parcelId)
+            }
+            return;
+        }
+        reply('no')
+    }
+    partner.position = message.position
 });
