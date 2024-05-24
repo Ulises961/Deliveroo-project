@@ -71,31 +71,4 @@
 			(not (at ?me ?from))
         )
     )
-    
-    (:action pickup
-        :parameters (?me ?parcel ?tile)
-        :precondition (and
-            (me ?me)
-            (at ?me ?tile)
-            (at ?parcel ?tile)
-            (free ?parcel)
-        )
-        :effect (and
-            (not (free ?parcel))
-			(carry ?me ?parcel)
-        )
-    )
-    
-    (:action putdown
-        :parameters (?me ?parcel ?tile)
-        :precondition (and
-            (me ?me)
-            (at ?me ?tile)
-            (carry ?me ?parcel)
-        )
-        :effect (
-			not (carry ?me ?parcel)
-        )
-    )
-    
 )
