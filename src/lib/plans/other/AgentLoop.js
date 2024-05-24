@@ -278,7 +278,6 @@ client.onMsg((id, name, msg, reply) => {
          * Add the new parcels to the map
          */
         let new_parcels = message.data
-        console.log('Received parcels from partner', new_parcels)
         new_parcels.forEach(parcel => {
             parcel.shared = true; // The parcel was shared by the partner
         })
@@ -293,7 +292,6 @@ client.onMsg((id, name, msg, reply) => {
         // If the other agent is closer, or the score of the parcel is lower than the score of the current intention, let the other agent pick it up
         if (thisAgentDistance > otherAgentDistance || agent.intention_queue[0].score >= computeParcelScore(message.parcel)) { 
             reply('yes')
-            console.log('Partner is picking up parcel', message.parcel)
             let parcelId = message.parcel.id
             blacklist.push(parcelId)
             updateIntentionScore(null, -1, parcelId)
