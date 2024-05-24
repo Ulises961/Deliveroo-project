@@ -290,7 +290,8 @@ client.onMsg((id, name, msg, reply) => {
         let otherAgentDistance = message.distance;
         let thisAgentDistance = distance(me, message.parcel);
 
-        if (thisAgentDistance > otherAgentDistance) { // the theoretical reward for the other is bigger than ours, let him have it.
+        // If the other agent is closer, or the score of the parcel is lower than the score of the current intention, let the other agent pick it up
+        if (thisAgentDistance > otherAgentDistance || agent.intention_queue[0].score >= computeParcelScore(message.parcel)) { 
             reply('yes')
             console.log('Partner is picking up parcel', message.parcel)
             let parcelId = message.parcel.id
