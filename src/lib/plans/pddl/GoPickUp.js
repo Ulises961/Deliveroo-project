@@ -24,8 +24,8 @@ export default class GoPickUp extends Plan {
 
             throw ['No path found'];
         }
-
-        await this.subIntention('execute_path', [path]);
+        let target = {x: predicate.x, y: predicate.y};
+        await this.subIntention('execute_path', [path, target]);
         let pickup = await client.pickup();
 
         if (pickup.length > 0) {

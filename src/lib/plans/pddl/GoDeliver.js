@@ -46,8 +46,7 @@ export default class GoDeliver extends Plan {
 
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
-          
-            let path_completed = await this.subIntention('execute_path', [path]);
+            let path_completed = await this.subIntention('execute_path', [path,closestDelivery.point]);
 
             if (path_completed) {
                 // Wait for the client to update the agent's position

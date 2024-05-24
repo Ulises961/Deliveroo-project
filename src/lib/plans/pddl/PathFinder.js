@@ -26,7 +26,7 @@ export default class PathFinder extends Plan {
 
     }
     async execute(x, y) {
-        let domain = await this.readFile('./lib/plans/pddl/domain-deliveroo.pddl');
+        let domain = await this.readFile('./lib/plans/pddl/domain-path-find.pddl');
 
 
         /** Problem */
@@ -73,8 +73,8 @@ export default class PathFinder extends Plan {
 
 
         var pddlProblem = new PddlProblem(
-            'pathFinding',
-            'deliveroo',
+            'path-finding',
+            'path-find',
             myBeliefset.objects.join(' '),
             myBeliefset.toPddlString(),
             null

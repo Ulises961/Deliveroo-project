@@ -47,7 +47,7 @@ export default class RandomMove extends Plan {
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
 
-        const complete = await this.subIntention('execute_path', [path]);
+        const complete = await this.subIntention('execute_path', [path, destination]);
         if (complete) {
             return true;
         } else {

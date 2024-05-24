@@ -1,5 +1,5 @@
-;; domain file: domain-deliveroo.pddl
-(define (domain deliveroo)
+;; domain file: domain-path-find.pddl
+(define (domain path-find)
     (:requirements :strips :negative-preconditions)
     (:predicates
         (tile ?t)

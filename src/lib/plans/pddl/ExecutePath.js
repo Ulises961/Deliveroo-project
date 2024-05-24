@@ -11,15 +11,13 @@ export default class ExecutePath extends Plan {
         return desire === 'execute_path'
     }
 
-    async execute(path) {
+    async execute(path, target) {
         this.stopped = false;
       
         if (!path || path.length == 0) {
             return true;
         }
-
-        const target = path[path.length - 1];
-        console.log('target', target);
+        
         let retries = 0
         const MAX_RETRIES = 5 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {
@@ -59,6 +57,10 @@ export default class ExecutePath extends Plan {
             return false;
         }
 
-       return true;
+        if (me?.x === target?.x && me?.y === target?.y) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
