@@ -15,7 +15,7 @@ export default class GoPickUp extends Plan {
     }
 
     async execute(predicate) {
-        logDebug('GoPickUp.execute: predicate ', predicate, ' me ', me);
+        logDebug(0, 'GoPickUp.execute: predicate ', predicate, ' me ', me);
 
         if (partner.id) {
 
@@ -39,7 +39,7 @@ export default class GoPickUp extends Plan {
                     return false;
                 }
             } catch (e) {
-                logDebug('GoPickUp.execute: no response from partner');
+                logDebug(0, 'GoPickUp.execute: no response from partner');
             }
         }
 

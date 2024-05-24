@@ -47,8 +47,11 @@ class Agent {
         this.intention_queue.sort((a, b) => b.score - a.score);
 
         if (currentIntention.id !== this.intention_queue[0].id && currentIntention.id === 'go_random' && this.intention_queue[0].id !== 'go_random') {
-            // If the current intention is not the first one, stop it
-            currentIntention.stop();
+            // stop the last intention if the difference between the first one in the queue and the last intention is more than 10%
+            if (currentIntention.score < this.intention_queue[0].score * 0.9) {
+                logDebug(2, 'Stopping intention', currentIntention.desire, currentIntention.score, 'because of new intention', this.intention_queue[0].desire, this.intention_queue[0].score);
+                currentIntention.stop();
+            }
         }
     }
 

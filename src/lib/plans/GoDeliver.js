@@ -22,12 +22,12 @@ export default class GoDeliver extends Plan {
         const triedDeliveryPoints = [closestDelivery.point];
 
         while (!this.stopped && retries < MAX_RETRIES) {
-            logDebug('GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
+            logDebug(0, 'GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
             
             if(!closestDelivery.point) {
-                logDebug('GoDeliver.execute: no delivery points found');
+                logDebug(0, 'GoDeliver.execute: no delivery points found');
                 throw ['No delivery point'];
             }
 
