@@ -38,8 +38,6 @@ export default class RandomMove extends Plan {
             return true;
         })
 
-        logDebug(2, 'Valid destinations:', validDestinations)
-
         if (validDestinations.length === 0) {
             // I'm in the only parcel spawner? Stay here
             while (!this.stopped) {

@@ -1,5 +1,5 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, getAgentsMap, isCellReachable, partner, logDebug } from '../../utils/utils.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, getAgentsMap, isCellReachable, partner, logDebug, agentsMap } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 import client from '../../utils/client.js';
 
@@ -210,12 +210,12 @@ export function computeParcelScore(parcel) {
     // 1 / distance: The closer the parcel, the higher the score
     // 1 - (1 / distance): The closer the parcel, the lower the score subtracted from the reward
     if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
-        return parcel.reward + sumCarriedParcels() - (1 - (1 / distance(me, parcel)));
+        return parcel.reward + sumCarriedParcels() - (1 - (1 / Math.max(distance(me, parcel), 1)));
 
     let distanceToParcel = distance(me, parcel);
     let distanceParcelToDelivery = findClosestDelivery([], parcel).distance;
     let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
-    const DECAY_IMPORTANCE = 3
+    const DECAY_IMPORTANCE = 2; // The importance of the decay in the score
     let decayRate = (configs.MOVEMENT_DURATION * 2 * DECAY_IMPORTANCE) / decay;
 
     let sumOfCarried = sumCarriedParcels();
@@ -240,6 +240,8 @@ function sendMemory() {
 
     parcelsToShare = parcelsToShare.filter(parcel => !sharedParcels.includes(parcel.id))
 
+    let agentsToShare = getAgentsMap()
+
     if (parcelsToShare.length == 0)
         return;
 
@@ -247,7 +249,8 @@ function sendMemory() {
 
     let message = {
         type: 'parcels',
-        data: parcelsToShare,
+        parcels: parcelsToShare,
+        agents: agentsToShare,
         position: me
     }
     client.say(partner.id, JSON.stringify(message))
@@ -272,24 +275,43 @@ client.onMsg((id, name, msg, reply) => {
     if (!message)
         return;
 
+    // All messages contain the position of the partner
+    partner.position = message.position;
+
     if (message.type === 'parcels') {
         /**
          * Add the new parcels to the map
          */
-        let new_parcels = message.data
+        let new_parcels = message.parcels
         new_parcels.forEach(parcel => {
             parcel.shared = true; // The parcel was shared by the partner
         })
         addNewParcels(new_parcels)
+
+        if (new_parcels.agents) {
+            new_parcels.agents.forEach(agent => {
+                agent.shared = true;
+                agentsMap.set(agent.id, agent);
+            })
+        }
     } else if (message.type === 'pick_up') {
         /**
          * Remove the parcel from the map if the other agent is picking it up
          */
-        let otherAgentDistance = message.distance;
+        let otherAgentDistance = distance(message.position, message.parcel);
         let thisAgentDistance = distance(me, message.parcel);
 
+        logDebug(3, 'Received pick up message; this agent distance', thisAgentDistance, 'other agent distance', otherAgentDistance, 'theorical score', computeParcelScore(message.parcel), 'current intention score:', agent.intention_queue[0].score, 'isCurrentIntention:', agent.intention_queue[0].id === message.parcel.id, 'pickUp:', otherAgentDistance > thisAgentDistance && agent.intention_queue[0].score < computeParcelScore(message.parcel));
+
+        // I'm already taking the parcel
+        if (agent.intention_queue[0].id === message.parcel.id) {
+            reply('no')
+            updateIntentionScore(message.parcel, computeParcelScore(message.parcel) + 5, message.parcel.id)
+            return
+        }
+
         // If the other agent is closer, or the score of the parcel is lower than the score of the current intention, let the other agent pick it up
-        if (thisAgentDistance > otherAgentDistance || agent.intention_queue[0].score >= computeParcelScore(message.parcel)) { 
+        if (thisAgentDistance > otherAgentDistance || agent.intention_queue[0].score >= computeParcelScore(message.parcel)) {
             reply('yes')
             let parcelId = message.parcel.id
             blacklist.push(parcelId)
@@ -300,6 +322,6 @@ client.onMsg((id, name, msg, reply) => {
             return;
         }
         reply('no')
+        updateIntentionScore(message.parcel, computeParcelScore(message.parcel), message.parcel.id)
     }
-    partner.position = message.position
 });
