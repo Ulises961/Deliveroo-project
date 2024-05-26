@@ -36,7 +36,6 @@ export default class GoDeliver extends Plan {
             if (path.length === 0) {
                 retries++;
                 // get latest position and recompute path to second closest delivery
-                updateMe();
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
                 triedDeliveryPoints.push(closestDelivery.point);
                 continue;
@@ -60,8 +59,15 @@ export default class GoDeliver extends Plan {
                 }
                 
                 return result
+            } else {
+                if (path.length === 0) {
+                    retries++;
+                    // Recompute path to second closest delivery
+                    closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
+                    triedDeliveryPoints.push(closestDelivery.point);
+                    continue;
+                }
             }
-            retries++;
             await new Promise(res => setImmediate(res));
         }
         throw ['max retries reached, delivery not completed'];
