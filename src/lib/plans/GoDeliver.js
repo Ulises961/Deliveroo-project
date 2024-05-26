@@ -23,6 +23,7 @@ export default class GoDeliver extends Plan {
 
         while (!this.stopped && retries < MAX_RETRIES) {
             logDebug(0, 'GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
+            logDebug(2, 'Executing deliver, current try: ', retries, 'on point:', closestDelivery)
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
             
@@ -37,6 +38,7 @@ export default class GoDeliver extends Plan {
                 retries++;
                 // get latest position and recompute path to second closest delivery
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
+                logDebug(2, 'No path found, new delivery point: ', closestDelivery.point)
                 triedDeliveryPoints.push(closestDelivery.point);
                 continue;
             }

@@ -12,6 +12,7 @@ export default class RandomMove extends Plan {
     }
 
     async execute(predicate) {
+        logDebug(2, 'Executing RandomMove')
         this.stopped = false;
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
@@ -37,7 +38,8 @@ export default class RandomMove extends Plan {
             return true;
         })
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        logDebug(2, 'Valid destinations:', validDestinations)
+
         if (validDestinations.length === 0) {
             // I'm in the only parcel spawner? Stay here
             while (!this.stopped) {

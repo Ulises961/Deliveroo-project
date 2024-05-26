@@ -111,8 +111,6 @@ class Agent {
                         }
                     });
 
-                updateMe();
-
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))
                     this.intention_queue = this.intention_queue.filter(i => i.id !== intention.id);
