@@ -301,24 +301,22 @@ client.onMsg((id, name, msg, reply) => {
         let otherAgentDistance = distance(message.position, message.parcel);
         let thisAgentDistance = distance(me, message.parcel);
 
-        logDebug(3, 'Received pick up message; this agent distance', thisAgentDistance, 'other agent distance', otherAgentDistance, 'theorical score', computeParcelScore(message.parcel), 'current intention score:', agent.intention_queue[0].score, 'isCurrentIntention:', agent.intention_queue[0].id === message.parcel.id, 'pickUp:', otherAgentDistance > thisAgentDistance && agent.intention_queue[0].score < computeParcelScore(message.parcel));
+        let pickup = (thisAgentDistance > otherAgentDistance || // The other agent is closer
+            (Math.floor(agent.intention_queue[0].score) >= Math.floor(computeParcelScore(message.parcel)) &&
+                agent.intention_queue[0].id !== message.parcel.id));
 
-        // I'm already taking the parcel
-        if (agent.intention_queue[0].id === message.parcel.id) {
-            reply('no')
-            updateIntentionScore(message.parcel, computeParcelScore(message.parcel) + 5, message.parcel.id)
-            return
-        }
+        logDebug(3, 'Received pick up message; this agent distance', thisAgentDistance, 'other agent distance', otherAgentDistance, 'theorical score', computeParcelScore(message.parcel), 'current intention score:', agent.intention_queue[0].score, 'isCurrentIntention:', agent.intention_queue[0].id === message.parcel.id, 'pick up:', thisAgentDistance > otherAgentDistance);
 
         // If the other agent is closer, or the score of the parcel is lower than the score of the current intention, let the other agent pick it up
-        if (thisAgentDistance > otherAgentDistance || agent.intention_queue[0].score >= computeParcelScore(message.parcel)) {
-            reply('yes')
+        if (thisAgentDistance > otherAgentDistance) {
+            // The current intention is better
             let parcelId = message.parcel.id
             blacklist.push(parcelId)
             updateIntentionScore(null, -1, parcelId)
             if (parcels.has(parcelId)) {
                 parcels.delete(parcelId)
             }
+            reply('yes')
             return;
         }
         reply('no')
