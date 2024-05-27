@@ -1,7 +1,7 @@
 
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, getAgentsMap, isCellReachable, partner, logDebug, agentsMap } from '../../utils/utils.js';
-import { agent } from '../../utils/agent.js';
-import client from '../../utils/client.js';
+import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, getAgentsMap, isCellReachable, partner, logDebug, agentsMap } from '../utils/utils.js';
+import { agent } from '../utils/agent.js';
+import client from '../utils/client.js';
 
 let parcelScoreInterval = null;
 export let carriedParcelsScoreInterval = null;
@@ -298,6 +298,7 @@ client.onMsg((id, name, msg, reply) => {
         /**
          * Remove the parcel from the map if the other agent is picking it up
          */
+
         let otherAgentDistance = distance(message.position, message.parcel);
         let thisAgentDistance = distance(me, message.parcel);
 
@@ -308,7 +309,9 @@ client.onMsg((id, name, msg, reply) => {
         logDebug(3, 'Received pick up message; this agent distance', thisAgentDistance, 'other agent distance', otherAgentDistance, 'theorical score', computeParcelScore(message.parcel), 'current intention score:', agent.intention_queue[0].score, 'isCurrentIntention:', agent.intention_queue[0].id === message.parcel.id, 'pick up:', thisAgentDistance > otherAgentDistance);
 
         // If the other agent is closer, or the score of the parcel is lower than the score of the current intention, let the other agent pick it up
-        if (thisAgentDistance > otherAgentDistance) {
+        // Also, if the cell is not reachable, let the other have it
+        if (thisAgentDistance > otherAgentDistance || 
+                !isCellReachable(message.parcel.x, message.parcel.y)) {
             // The current intention is better
             let parcelId = message.parcel.id
             blacklist.push(parcelId)

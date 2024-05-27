@@ -1,6 +1,6 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../utils/utils.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../../utils/utils.js';
 
 export default class FollowPath extends Plan {
     constructor() {
@@ -42,7 +42,6 @@ export default class FollowPath extends Plan {
             const moved = await client.move(direction);
 
             // Update positions
-            updateMe();
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))
 

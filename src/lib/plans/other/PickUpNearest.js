@@ -1,6 +1,6 @@
-import Plan from './Plan.js';
-import client from '../utils/client.js';
-import { me } from '../utils/utils.js';
+import Plan from '../Plan.js';
+import client from '../../utils/client.js';
+import { me } from '../../utils/utils.js';
 import logger from '../../utils/logger.js';
 
 export default class PickUpNearest extends Plan {

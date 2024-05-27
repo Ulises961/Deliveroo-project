@@ -5,7 +5,7 @@ import {
 } from "./lib/utils/utils.js";
 import { agent } from "./lib/utils/agent.js";
 import client, { askPartnerId, passOwnId } from './lib/utils/client.js';
-import { parcelsLoop } from './lib/plans/other/AgentLoop.js'
+import { parcelsLoop } from './lib/plans/AgentLoop.js'
 import './lib/plans/other/Library.js'
 
 /**
