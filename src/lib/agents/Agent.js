@@ -49,7 +49,7 @@ class Agent {
         if (currentIntention.id !== this.intention_queue[0].id && currentIntention.id === 'go_random' && this.intention_queue[0].id !== 'go_random') {
             // stop the last intention if the difference between the first one in the queue and the last intention is more than 10%
             if (currentIntention.score < this.intention_queue[0].score * 0.9) {
-                logDebug(3, 'Stopping intention', currentIntention.desire, currentIntention.score, 'because of new intention', this.intention_queue[0].desire, this.intention_queue[0].score);
+                logDebug(4, 'Stopping intention', currentIntention.desire, currentIntention.score, 'because of new intention', this.intention_queue[0].desire, this.intention_queue[0].score);
                 currentIntention.stop();
             }
         }
@@ -102,7 +102,7 @@ class Agent {
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
                     .catch(async error => {
-                        logDebug(0, 'Failed intention', intention.toString(), 'with error:', error);
+                        logDebug(4, 'Failed intention', intention.toString(), 'with error:', error);
 
                         if (intention.id === 'go_deliver') {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
