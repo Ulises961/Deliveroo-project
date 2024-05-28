@@ -15,7 +15,6 @@ export default class AStar extends Plan {
      * Check if an agent is in a cell, in case avoid it!
      */
     isAgentInCell(x, y) {
-        updateAgentsMap();
         const isInCell = getAgentsMap().find(agent => agent.x === x && agent.y === y)
         return !!isInCell;
     }

@@ -20,7 +20,7 @@ export default class PddlProblem {
             fs.writeFile(path, this.toPddlString(), err => {
                 if (err)
                     rej(err)
-                else // console.log("File written successfully");
+                else 
                     res(path)
             })
 

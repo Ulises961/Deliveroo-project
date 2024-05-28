@@ -42,7 +42,6 @@ export default class FollowPath extends Plan {
             const moved = await client.move(direction);
 
             // Update positions
-            updateMe();
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))
 
@@ -53,6 +52,9 @@ export default class FollowPath extends Plan {
                 carryParcel(parcelInCell);
             }
 
+            if (me?.x === target?.x && me?.y === target?.y)
+                return true;
+
             // There is an agent in the target cell
             if (getAgentsMap().find(agent => target.x === agent.x && target.y === agent.y)) {
                 return false
@@ -61,7 +63,7 @@ export default class FollowPath extends Plan {
             if (!moved) {
                 retries++;
                 // Re-compute path
-                path = await this.subIntention('path_finder', [target.x, target.y]);
+                path = await this.subIntention('a_star', [target.x, target.y]);
             }
         }
 

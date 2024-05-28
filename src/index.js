@@ -1,12 +1,12 @@
 import {
     map, deliveryPoints, validCells, updateMe, configs, 
-    GROUP, partner, 
-    updateAgentsMap
+    GROUP, partner, me,
+    updateAgentsMap, logDebug
 } from "./lib/utils/utils.js";
 import { agent } from "./lib/utils/agent.js";
 import client, { askPartnerId, passOwnId } from './lib/utils/client.js';
 import { parcelsLoop } from './lib/plans/AgentLoop.js'
-import './lib/plans/pddl/Library.js'
+import './lib/plans/other/Library.js'
 
 /**
  * Belief revision function
@@ -73,7 +73,7 @@ client.onMsg((id, name, msg) => {
         partner.id = id;
         partner.name = name;
         passOwnId(id);
-        console.log(`Received message from ${name} with id ${id}: ${msg}, partner id: ${partner.id}, partner name: ${partner.name}`);
+        logDebug(2, `Received message from ${name} with id ${id}: ${msg}, partner id: ${partner.id}, partner name: ${partner.name}`);
     }
 });
 

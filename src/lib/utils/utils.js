@@ -51,7 +51,7 @@ const parcels = new Map();
 const me = {};
 
 /**
- * @type {[{x: number, y: number, delivery: boolean}]}
+ * @type {[{x: number, y: number, delivery: boolean, fakeFloor: boolean}]}
  */
 const map = [[]]
 
@@ -118,17 +118,6 @@ const updateMe = async function updateMe() {
     })
 };
 
-const updateAgentsMap = async function updateAgentsMap() {
-    return await new Promise(res => {
-        client.onAgentsSensing(agents => {
-            agents.forEach(agent => {
-                agentsMap.set(agent.id, agent);
-            });
-            res(agentsMap);
-        });
-    })
-};
-
 const configs = {
     AGENTS_OBSERVATION_DISTANCE: 5,
     PARCELS_OBSERVATION_DISTANCE: 5,
@@ -175,16 +164,35 @@ const isCellReachable = function (x, y) {
  * @type {[{id: string, x: number, y: number, name: string, score: number}]}
  */
 const agentsMap = new Map();
+
 const getAgentsMap = () => {
-    return Array.from(agentsMap.values());
+    // Decrease the score of the agents that have not been seen for a while
+    // Only take agents that have been seen recently
+    const MAX_TIME = 5000; // 5sec
+    return Array.from(agentsMap.values())
+        .filter(agent => Date.now() - agent.discoveryTime < MAX_TIME);
 }
-const partner = { id: null, name: null };
+
+const updateAgentsMap = async function updateAgentsMap() {
+    return await new Promise(res => {
+        client.onAgentsSensing(agents => {
+            agents.forEach(agent => {
+                agent.discoveryTime = Date.now();
+                agentsMap.set(agent.id, agent);
+            });
+            res(agentsMap);
+        });
+    })
+};
+
+const partner = { id: null, name: null, position: null };
 const GROUP = ['ulises', 'lorenzo'];
 
 const DEBUG = process.env.DEBUG === 'true' || false;
+const DEBUG_LEVEL = process.env.DEBUG_LEVEL || 0;
 
-const logDebug = function logDebug(...args) {
-    if (DEBUG) {
+const logDebug = function logDebug(level, ...args) {
+    if (DEBUG && DEBUG_LEVEL <= level) {
         console.log(...args);
     }
 }

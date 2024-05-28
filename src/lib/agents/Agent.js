@@ -15,7 +15,7 @@ class Agent {
     count = 0;
     /**
      * Pushes a new intention to the queue
-     * @param {{desire: string, args: [Object], score: number}} option the intention to be pushed
+     * @param {{desire: string, args: [Object], score: number, id: string}} option the intention to be pushed
      */
     push(option) {
         // If the intention is already queued
@@ -28,7 +28,7 @@ class Agent {
             this.changeIntentionScore(option.desire, option.args, option.score, option.id);
             return;
         }
-        logDebug('Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
+        logDebug(0, 'Pushing intention', option.desire, option.args, option.score, option.id, sameIntention)
         if (option.score < 0)
             return;
         
@@ -47,8 +47,11 @@ class Agent {
         this.intention_queue.sort((a, b) => b.score - a.score);
 
         if (currentIntention.id !== this.intention_queue[0].id && currentIntention.id === 'go_random' && this.intention_queue[0].id !== 'go_random') {
-            // If the current intention is not the first one, stop it
-            currentIntention.stop();
+            // stop the last intention if the difference between the first one in the queue and the last intention is more than 10%
+            if (currentIntention.score < this.intention_queue[0].score * 0.9) {
+                logDebug(3, 'Stopping intention', currentIntention.desire, currentIntention.score, 'because of new intention', this.intention_queue[0].desire, this.intention_queue[0].score);
+                currentIntention.stop();
+            }
         }
     }
 
@@ -99,7 +102,7 @@ class Agent {
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
                     .catch(async error => {
-                        logDebug('Failed intention', intention.toString(), 'with error:', error);
+                        logDebug(0, 'Failed intention', intention.toString(), 'with error:', error);
 
                         if (intention.id === 'go_deliver') {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
@@ -107,8 +110,6 @@ class Agent {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 1, intention.id);
                         }
                     });
-
-                updateMe();
 
                 // Remove from the queue
                 if (!fixedIntentions.includes(intention.desire))

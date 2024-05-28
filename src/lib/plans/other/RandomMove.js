@@ -35,9 +35,7 @@ export default class RandomMove extends Plan {
         if (this.stopped) throw ['stopped']; // if stopped then quit
         if (validDestinations.length === 0) {
             // I'm in the only parcel spawner? Stay here
-            while (!this.stopped) {
-                await new Promise(res => setImmediate(res));
-            }
+            return;
         }
         
         if (this.stopped) throw ['stopped']; // if stopped then quit

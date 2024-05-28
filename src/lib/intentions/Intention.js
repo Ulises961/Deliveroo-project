@@ -100,7 +100,7 @@ export default class Intention extends Promise {
         if (this.#desire && this.#desire.log) {
             this.#desire.log('\t', ...args)
         } else {
-            logDebug(...args)
+            logDebug(0, ...args)
         }
     }
 
@@ -130,7 +130,7 @@ export default class Intention extends Promise {
                 // and plan is executed and result returned
 
                 const plan_res = await this.#current_plan.execute(...this.predicate);
-                logDebug('succesful intention', planClass.name, 'with result:', plan_res);
+                logDebug(0, 'succesful intention', planClass.name, 'with result:', plan_res);
 
                 return plan_res
             }

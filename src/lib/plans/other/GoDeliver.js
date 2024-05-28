@@ -18,25 +18,27 @@ export default class GoDeliver extends Plan {
         let closestDelivery = findClosestDelivery([], me);
         let retries = 0;
         const MAX_RETRIES = deliveryPoints.length * deliveryPoints.length * 2;
-        
+
         const triedDeliveryPoints = [closestDelivery.point];
 
         while (!this.stopped && retries < MAX_RETRIES) {
-            logDebug('GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
+            logDebug(0, 'GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
+            logDebug(2, 'Executing deliver, current try: ', retries, 'on point:', closestDelivery)
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
-            
-            if(!closestDelivery.point) {
-                logDebug('GoDeliver.execute: no delivery points found');
+
+            if (!closestDelivery.point) {
+                logDebug(0, 'GoDeliver.execute: no delivery points found');
                 throw ['No delivery point'];
             }
 
             let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y]);
-            
+          
             if (path.length === 0) {
                 retries++;
                 // get latest position and recompute path to second closest delivery
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
+                logDebug(2, 'No path found, new delivery point: ', closestDelivery.point)
                 triedDeliveryPoints.push(closestDelivery.point);
                 continue;
             }
@@ -61,16 +63,14 @@ export default class GoDeliver extends Plan {
                     carriedParcels.length = 0;
                     agent.changeIntentionScore('go_deliver', [], 0, 'go_deliver');
                 }
-                
+
                 return result
             } else {
-                if (path.length === 0) {
-                    retries++;
-                    // Recompute path to second closest delivery
-                    closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
-                    triedDeliveryPoints.push(closestDelivery.point);
-                    continue;
-                }
+                retries++;
+                // Recompute path to second closest delivery
+                closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
+                triedDeliveryPoints.push(closestDelivery.point);
+                continue;
             }
             await new Promise(res => setImmediate(res));
         }

@@ -12,4 +12,3 @@ plans.push(new GoPickUp())
 plans.push(new PathFinder())
 plans.push(new PickUpNearest())
 plans.push(new RandomMove())
-console.log(plans);
