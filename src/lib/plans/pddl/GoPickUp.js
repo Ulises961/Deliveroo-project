@@ -44,6 +44,7 @@ export default class GoPickUp extends Plan {
 
         let path = await this.subIntention('find_path', [predicate.x, predicate.y]);
         logDebug(0, 'GoPickUp.execute: path ', path);
+      
         if (path.length === 0) {
             agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
 

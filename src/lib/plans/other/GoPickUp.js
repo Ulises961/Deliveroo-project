@@ -49,7 +49,7 @@ export default class GoPickUp extends Plan {
 
             throw ['No path found'];
         }
-
+      
         path = path.reverse();
         path.shift();
         await this.subIntention('follow_path', [path]);

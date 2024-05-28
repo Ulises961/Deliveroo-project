@@ -1,4 +1,3 @@
-
 import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, getAgentsMap, isCellReachable, partner, logDebug, agentsMap } from '../utils/utils.js';
 import { agent } from '../utils/agent.js';
 import client from '../utils/client.js';
@@ -117,6 +116,7 @@ async function removeOldParcels(new_parcels) {
  */
 function addNewParcels(new_parcels) {
     new_parcels = new_parcels.filter(parcel => !blacklist.includes(parcel.id) && !parcels.has(parcel.id) && !parcel.carriedBy && isCellReachable(parcel.x, parcel.y))
+  
     for (const parcel of new_parcels) {
         parcel.discovery = Date.now()
         parcel.originalReward = parcel.reward
@@ -187,6 +187,7 @@ export function getDeliveryScore() {
     }
     return 0;
 }
+
 
 /**
  * futureDeliveryReward = [Sum of carried] - ([distance from delivery] * [decay] * [number of parcels])
