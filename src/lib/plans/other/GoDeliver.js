@@ -13,8 +13,13 @@ export default class GoDeliver extends Plan {
         return desire === this.name
     }
 
-    async execute(predicate) {
+    /**
+     * Execute the plan to deliver a parcel to the closest delivery point.
+     * In case of failure insists on other delivery points
+     */
+    async execute() {
         this.stopped = false;
+
         let closestDelivery = findClosestDelivery([], me);
         let retries = 0;
         const MAX_RETRIES = deliveryPoints.length * deliveryPoints.length * 2;
@@ -22,10 +27,11 @@ export default class GoDeliver extends Plan {
         const triedDeliveryPoints = [closestDelivery.point];
 
         while (!this.stopped && retries < MAX_RETRIES) {
-            logDebug(0, 'GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
+            logDebug(0, 'GoDeliver.execute: me ', me, ' closestDelivery ', closestDelivery);
             logDebug(2, 'Executing deliver, current try: ', retries, 'on point:', closestDelivery)
+            
             if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+                throw ['stopped']; 
 
             if (!closestDelivery.point) {
                 logDebug(0, 'GoDeliver.execute: no delivery points found');
@@ -36,10 +42,14 @@ export default class GoDeliver extends Plan {
           
             if (path.length === 0) {
                 retries++;
-                // get latest position and recompute path to second closest delivery
+
+                // Get latest position and recompute path to second closest delivery
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
-                logDebug(2, 'No path found, new delivery point: ', closestDelivery.point)
                 triedDeliveryPoints.push(closestDelivery.point);
+                logDebug(2, 'No path found, new delivery point: ', closestDelivery.point)
+                
+                // Let the event loop run before retrying
+                await new Promise(res => setImmediate(res));
                 continue;
             }
 
@@ -49,16 +59,17 @@ export default class GoDeliver extends Plan {
             let promise = new Promise(res => client.onYou(res)) // Wait for the client to update the agent's position
 
             if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+                throw ['stopped']; 
 
             let path_completed = await this.subIntention('follow_path', [path]);
 
             if (path_completed) {
-                // Wait for the client to update the agent's position
-                await new Promise(res => setImmediate(res));
                 if (me.x % 1 != 0 || me.y % 1 != 0)
-                    await promise
+                    await updateMe();
+                
                 let result = await client.putdown();
+
+                // If the delivery is successful, reset the carried parcels
                 if (result.length > 0) {
                     carriedParcels.length = 0;
                     agent.changeIntentionScore('go_deliver', [], 0, 'go_deliver');
@@ -70,9 +81,12 @@ export default class GoDeliver extends Plan {
                 // Recompute path to second closest delivery
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
                 triedDeliveryPoints.push(closestDelivery.point);
+
+                // Let the event loop run before retrying
+                await new Promise(res => setImmediate(res));
+                
                 continue;
             }
-            await new Promise(res => setImmediate(res));
         }
         throw ['max retries reached, delivery not completed'];
     }

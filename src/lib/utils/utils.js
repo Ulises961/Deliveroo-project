@@ -137,7 +137,6 @@ const carryParcel = (parcel) => {
         return;
     }
     carriedParcels.push({ id: parcel.id, reward: parcel.reward, pickupTime: Date.now() });
-    parcels.delete(parcel.id);
 }
 
 const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000 };
@@ -197,6 +196,8 @@ const logDebug = function logDebug(level, ...args) {
     }
 }
 
+const fixedIntentions = ['go_random', 'go_deliver'];
+
 export {
     distance,
     updateMe,
@@ -219,5 +220,6 @@ export {
     updateAgentsMap,
     getAgentsMap,
     isCellReachable,
-    logDebug
+    logDebug,
+    fixedIntentions
 };

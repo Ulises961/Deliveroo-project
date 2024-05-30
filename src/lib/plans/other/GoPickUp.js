@@ -14,6 +14,12 @@ export default class GoPickUp extends Plan {
         return desire === 'go_pick_up'
     }
 
+    /**
+     * Execute the plan to pick up a parcel
+     * @param {{}} predicate 
+     * @returns true if the parcel is picked up successfully
+     * @throws {['No path found']} if no path is found to the parcel
+     */
     async execute(predicate) {
         logDebug(0, 'GoPickUp.execute: predicate ', predicate, ' me ', me);
 
@@ -56,10 +62,8 @@ export default class GoPickUp extends Plan {
         let pickup = await client.pickup();
 
         if (pickup.length > 0) {
-            pickup.forEach(parcelId => {
-                let parcel = parcels.get(parcelId);
+            pickup.forEach(parcel => {
                 carryParcel(parcel);
-                parcels.delete(parcelId);
                 agent.changeIntentionScore('go_pick_up', [parcel], -1, parcel.id);
             
             })

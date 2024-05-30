@@ -14,30 +14,28 @@ export default class PathFinder extends Plan {
     }
 
     readFile(path) {
-
         return new Promise((res, rej) => {
 
             fs.readFile(path, 'utf8', (err, data) => {
                 if (err) rej(err)
                 else res(data)
             })
-
         })
-
     }
+
     async execute(x, y) {
-        let domain = await this.readFile('./lib/plans/pddl/domain-path-find.pddl');
 
-
-        /** Problem */
+        // Problem
         const myBeliefset = new Beliefset();
 
+        // Compute a subset of the map to reduce the planning complexity
         let margin = 3;
         let filteredCells = validCells.filter(cell => {
             return (cell.x >= Math.min(me.x, x) - margin && cell.x <= Math.max(me.x, x) + margin) &&
                 (cell.y >= Math.min(me.y, y) - margin && cell.y <= Math.max(me.y, y) + margin);
         });
 
+        // Declare the tiles
         filteredCells
             .forEach(tile => {
                 myBeliefset.declare(`tile t${tile.x}_${tile.y}`);
@@ -61,15 +59,17 @@ export default class PathFinder extends Plan {
                 }
             });
 
+        // Declare the agents
         agentsMap.forEach(agent => {
             myBeliefset.declare(`agent agent_${agent.id}`);
             myBeliefset.declare(`at agent_${agent.id} t${Math.round(agent.x)}_${Math.round(agent.y)}`);
         });
 
-
+        // Declare the agent that is planning
         myBeliefset.declare(`at me t${me.x}_${me.y}`);
         myBeliefset.declare(`me me`);
 
+        // Declare the parcels
         parcels.forEach(parcel => {
             myBeliefset.declare(`parcel t${parcel.x}_${parcel.y}`);
             if (parcel.carriedBy) {
@@ -79,7 +79,7 @@ export default class PathFinder extends Plan {
             }
         });
 
-
+        // Create the PDDL problem
         var pddlProblem = new PddlProblem(
             'path-finding',
             'path-find',
@@ -90,10 +90,14 @@ export default class PathFinder extends Plan {
 
         pddlProblem.goals = `at me t${x}_${y}`;
         let problem = pddlProblem.toPddlString();
+        let domain = await this.readFile('./lib/plans/pddl/domain-path-find.pddl');
+
         let plan = await onlineSolver(domain, problem);
+        
         if (!plan) {
             return [];
         }
+        
         return plan.map(p => p.action.toLowerCase());
     }
 

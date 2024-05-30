@@ -1,6 +1,6 @@
-import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { me, parcels, updateMe, carryParcel, getAgentsMap } from '../../utils/utils.js';
+import { carryParcel, getAgentsMap, me, parcels } from '../../utils/utils.js';
+import Plan from '../Plan.js';
 
 export default class ExecutePath extends Plan {
     constructor() {
@@ -22,7 +22,7 @@ export default class ExecutePath extends Plan {
         const MAX_RETRIES = 5 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {
             if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+                throw ['stopped'];
 
             await new Promise(res => setImmediate(res));
             if (me.x % 1 != 0 || me.y % 1 != 0)

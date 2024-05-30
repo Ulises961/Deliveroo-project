@@ -1,6 +1,7 @@
-import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../../utils/utils.js';
+import { carryParcel, getAgentsMap, me, parcels, updateMe } from '../../utils/utils.js';
+import Plan from '../Plan.js';
+import { Cell } from './AStar.js';
 
 export default class FollowPath extends Plan {
     constructor() {
@@ -10,7 +11,12 @@ export default class FollowPath extends Plan {
     isApplicableTo(desire) {
         return desire === 'follow_path'
     }
-
+    
+    /**
+     * Follow the path traced by the A* algorithm
+     * @param {[Cell]} path 
+     * @returns true if the path is completed, false otherwise
+     */
     async execute(path) {
         this.stopped = false;
       
@@ -26,9 +32,8 @@ export default class FollowPath extends Plan {
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
 
-            await new Promise(res => setImmediate(res));
             if (me.x % 1 != 0 || me.y % 1 != 0)
-                await new Promise(res => client.onYou(res))
+                await updateMe();
 
             const currentCell = path.shift();
             let direction = 'right';
@@ -43,7 +48,7 @@ export default class FollowPath extends Plan {
 
             // Update positions
             if (me.x % 1 != 0 || me.y % 1 != 0)
-                await new Promise(res => client.onYou(res))
+                await updateMe();
 
             // There are parcels in the current cell
             let parcelInCell = Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)

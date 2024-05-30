@@ -41,30 +41,30 @@ export default class GoPickUp extends Plan {
                 logDebug(3, 'GoPickUp.execute: no response from partner');
             }
         }
-
+        // Find path to the parcel
         let path = await this.subIntention('find_path', [predicate.x, predicate.y]);
         logDebug(0, 'GoPickUp.execute: path ', path);
-      
+
+        // No path found, mark intention for deletion
         if (path.length === 0) {
             agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
-
             throw ['No path found'];
         }
+
+        // Execute the path and pick up the parcel
         let target = {x: predicate.x, y: predicate.y};
         await this.subIntention('execute_path', [path, target]);
         let pickup = await client.pickup();
 
+        // For each parcel picked up, carry it and mark the intention for deletion
         if (pickup.length > 0) {
-            pickup.forEach(parcelId => {
-                let parcel = parcels.get(parcelId);
+            pickup.forEach(parcel => {
                 carryParcel(parcel);
-                parcels.delete(parcelId);
                 agent.changeIntentionScore('go_pick_up', [parcel], -1, parcel.id);
-            
             })
         }
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        if (this.stopped) throw ['stopped']; 
 
         updateCarriedParcelsScore();
 

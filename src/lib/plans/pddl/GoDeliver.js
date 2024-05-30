@@ -24,7 +24,7 @@ export default class GoDeliver extends Plan {
         while (!this.stopped && retries < MAX_RETRIES) {
             logDebug(0, 'GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
             if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+                throw ['stopped'];
 
             if (!closestDelivery.point) {
                 logDebug(0, 'GoDeliver.execute: no delivery points found');
@@ -48,25 +48,29 @@ export default class GoDeliver extends Plan {
             let path_completed = await this.subIntention('execute_path', [path, closestDelivery.point]);
 
             if (path_completed) {
+
                 // Wait for the client to update the agent's position
-                await new Promise(res => setImmediate(res));
                 if (me.x % 1 != 0 || me.y % 1 != 0)
-                    await promise
+                    await updateMe();
                 let result = await client.putdown();
                 if (result.length > 0) {
                     carriedParcels.length = 0;
                     agent.changeIntentionScore('go_deliver', [], 0, 'go_deliver');
                 }
-
                 return result
             } else {
+                // Path not completed, retry with another delivery point
                 retries++;
+
                 // Recompute path to second closest delivery
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
                 triedDeliveryPoints.push(closestDelivery.point);
+
+                // Leave the event loop run before retrying
+                await new Promise(res => setImmediate(res));
+                
                 continue;
             }
-            await new Promise(res => setImmediate(res));
         }
         throw ['max retries reached, delivery not completed'];
     }

@@ -1,5 +1,8 @@
 import fs from 'fs';
 
+/**
+ * Represents a PDDL problem with a custom domain name.
+ */
 export default class PddlProblem {
     
     static nextId = 0;
@@ -23,21 +26,19 @@ export default class PddlProblem {
                 else 
                     res(path)
             })
-
         })
-
     }
 
     toPddlString() {
-        return `\
-;; problem file: ${this.name}.pddl
-(define (problem ${this.name})
-    (:domain ${this.domain})
-    (:objects ${this.objects})
-    (:init ${this.inits})
-    (:goal (${this.goals}))
-)
-`
+        return `
+        ;; problem file: ${this.name}.pddl
+        (define (problem ${this.name})
+            (:domain ${this.domain})
+            (:objects ${this.objects})
+            (:init ${this.inits})
+            (:goal (${this.goals}))
+        )
+        `
     }
 
 }
