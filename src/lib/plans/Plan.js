@@ -2,7 +2,6 @@ import Intention from "../intentions/Intention.js";
 
 export default class Plan {
 
-    // This is used to stop the plan
     #stopped = false;
     get stopped() {
         return this.#stopped;

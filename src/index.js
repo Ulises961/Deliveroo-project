@@ -56,7 +56,6 @@ client.onConfig(config => {
  * Perceive the agents near us, and update the agents array with the new information
  * The old data is erased
  */
-
 updateAgentsMap();
 
 // Update the agent's information necessary to communicate with the partner
