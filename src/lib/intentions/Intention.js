@@ -1,24 +1,29 @@
 import { logDebug, plans } from '../utils/utils.js';
 import Plan from '../plans/Plan.js';
+
 /**
- * Intention
+ * Represents an intention of the agent.
+ * An intention is a desire that the agent wants to achieve.
+ * The intention is achieved by executing a plan.
+ * The intention can be stopped with the stop() method.
+ * Each intention has a desire, an id, and a score.
  */
 export default class Intention extends Promise {
 
     #resolve;
     #reject;
     /**
-     * @type {number} the points assigned to this intention
+     * @type {number} the points assigned to this intention, used for sorting
      */
     #score
 
     /**
-     * @type {number} the id assigned to this intention
+     * @type {number} the id used to identify an intention
      */
     #id
 
     /**
-     * @type {Plan} the current plan that is being executed
+     * @type {Plan} the current plan that is being executed to achieve the intention
      */
     #current_plan;
 
@@ -28,7 +33,7 @@ export default class Intention extends Promise {
     #stopped = false;
 
     /**
-     * @type {string} the desire that this intention is trying to achieve
+     * @type {string} the desire that this intention is trying to achieve (e.g. 'go_random')
      */
     #desire;
 
@@ -122,14 +127,13 @@ export default class Intention extends Promise {
             // if stopped then quit
             if (this.stopped) throw ['stopped intention', this.desire];
 
-            // if plan is 'statically' applicable
+            // if plan is applicable to the desire
             if (planClass.isApplicableTo(this.desire)) {
 
                 // plan is instantiated
                 this.#current_plan = planClass;
-                // this.log('achieving intention', planClass.name);
-                // and plan is executed and result returned
 
+                // Achieve the plan
                 const plan_res = await this.#current_plan.execute(...this.predicate);
                 logDebug(0, 'succesful intention', planClass.name, 'with result:', plan_res);
 
