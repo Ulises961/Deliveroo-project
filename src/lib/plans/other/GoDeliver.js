@@ -148,7 +148,7 @@ export default class GoDeliver extends Plan {
                             throw ['partner rejected meeting'];
                         }
 
-                        agent.push({ desire: 'go_partner', args: [midPoint, true], score: 9999, id: 'go_partner' }) // Always prioritize the meeting
+                        agent.push({ desire: 'go_partner_initiator', args: [midPoint], score: 9999, id: 'go_partner_initiator' }) // Always prioritize the meeting
                         this.stop();
                         return;
                     }

@@ -102,7 +102,7 @@ class Agent {
                 const achieved = await intention.achieve()
                     // Catch eventual error and continue
                     .catch(async error => {
-                        logDebug(4, 'Failed intention', intention.toString(), 'with error:', error);
+                        logDebug(3, 'Failed intention', intention.toString(), 'with error:', error);
 
                         if (intention.id === 'go_deliver') {
                             this.changeIntentionScore(intention.desire, [...intention.predicate], 0, intention.id);
