@@ -2,8 +2,14 @@ import { agent } from '../utils/agent.js';
 import client from '../utils/client.js';
 import { agentsMap, carriedParcels, configs, decayIntervals, distance, findClosestDelivery, getAgentsMap, isCellReachable, logDebug, me, parcels, partner } from '../utils/utils.js';
 
+/**
+ * The interval that updates the score of the parcels, each clock tick
+ */
 let parcelScoreInterval = null;
 
+/**
+ * The interval that updates the score of the carried parcels, each clock tick
+ */
 export let carriedParcelsScoreInterval = null;
 
 /**
@@ -11,6 +17,9 @@ export let carriedParcelsScoreInterval = null;
  */
 export let blacklist = []
 
+/**
+ * List of parcels that have been shared with the other agent, so that they are not shared again
+ */
 let sharedParcels = []
 
 /**
@@ -20,6 +29,8 @@ export function parcelsLoop(new_parcels) {
     /**
      * Update the score of the parcels, if the score reaches 0, delete it from the map.
      * Update the reward for the intention as well.
+     * We chose to use an interval instead of relying on the agent loop, because the agent loop is not guaranteed to run every clock tick. The interval is not dependent on the server.
+     * The interval is initialized on the first call of the function
      */
     if (!parcelScoreInterval) {
         parcelScoreInterval = setInterval(() => {
@@ -38,6 +49,7 @@ export function parcelsLoop(new_parcels) {
                 let decayedReward = Math.floor(parcel.originalReward - (msPassed / decay))
 
                 parcel.reward = decayedReward
+                // Delete the parcel if the reward is 0 or lower
                 if (parcel.reward <= 0)
                     parcels.delete(parcel.id)
                 updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
@@ -47,7 +59,7 @@ export function parcelsLoop(new_parcels) {
 
     if (!carriedParcelsScoreInterval) {
         /**
-         * Update the score of the carried parcels
+         * Update the score of the carried parcels, every clock tick
          */
         carriedParcelsScoreInterval = setInterval(async () => {
             updateCarriedParcelsScore()
@@ -55,7 +67,7 @@ export function parcelsLoop(new_parcels) {
     }
 
     /**
-    * If there are no new parcels, stop reconsidering
+    * Remove parcels that are in the map, but not in the observation range (if the position of the parcel can be reached by the observation range, from the current position)
     */
     removeOldParcels(new_parcels)
 
@@ -65,7 +77,7 @@ export function parcelsLoop(new_parcels) {
     addNewParcels(new_parcels)
 
     /**
-     * Choose the best option, which can be a parcel, the delivery, or a random walk
+     * Add the parcels to the intention queue, so that the agent can choose the best option
      */
     chooseBestOption()
 
@@ -83,7 +95,7 @@ function updateIntentionScore(parcel, newScore, id) {
 }
 
 /**
- * Remove parcels that are in observation range, are in the map but are not in the new_parcels list 
+ * Remove parcels that are in the map, should be seen from the current position, based on the observation range, but they are not there anymore
  * (so they disappeared, or they have been taken)
  */
 async function removeOldParcels(new_parcels) {
@@ -108,6 +120,7 @@ async function removeOldParcels(new_parcels) {
                     updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
                     continue;
                 }
+                // Add discovery time, original reward, and update the parcel score in the intention queue
                 newParcel.discovery = Date.now()
                 newParcel.originalReward = newParcel.reward
                 parcels.set(parcel.id, newParcel)
@@ -130,6 +143,9 @@ function addNewParcels(new_parcels) {
     }
 }
 
+/**
+ * Add all the (obtainable) parcels to the intention queue, so that the agent can choose the best option
+ */
 function chooseBestOption() {
     const options = new Map();
     for (const [id, parcel] of parcels.entries()) {
@@ -148,11 +164,15 @@ function chooseBestOption() {
             agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score, id: parcel.id })
         }
     }
+    // If no parcel is available, go to a random spot
     if (options.size == 0) {
         agent.push({ desire: 'go_random', args: [], score: 1, id: 'go_random' })
     }
 }
 
+/**
+ * Compute the sum of the carried parcels, based on the decay interval and the time they were picked up
+ */
 function sumCarriedParcels() {
     return carriedParcels
         .reduce((previous, current, index) => {
