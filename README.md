@@ -36,11 +36,17 @@ Insert the configuration options:
 * Set `DEBUG=true` if you want to have console.logs about what the agent is doing.
 * Set `DEBUG_LEVEL=3` to get console.logs with priority >= 3.
 * You can choose to use either the PDDL planner or the "A*" algorithm for path finding by setting line 9 in the `index.js` file:
+
     `import './lib/plans/other/Library.js'`: for A*
+
     `import './lib/plans/other/Library.js'`: for PDDL planner.
+
 * To use the planner, you need to add the following line to the `.env`:
+  
     `PAAS_PATH='/package/dual-bfws-ffparser/solve'`
+  
 * If you are hosting the [planner yourself](https://github.com/AI-Planning/planning-as-a-service), set the planner's URL in the `.env`:
+
     `PAAS_HOST='http://localhost:5001'`
 
 ### Run the code
