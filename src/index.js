@@ -28,8 +28,10 @@ client.onMap((w, h, newMap) => {
         map[tile.x][tile.y] = tile
         map[tile.x][tile.y].fakeFloor = false
 
+        // The valid cells are the ones that are not walls
         validCells.push(tile)
 
+        // Also a list of delivery cells for convenience
         if (tile.delivery) {
             deliveryPoints.push({ x: tile.x, y: tile.y })
         }
