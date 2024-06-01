@@ -10,6 +10,7 @@ export default class GoPartnerReceiver extends Plan {
     amAtMidPoint = false;
     goPartnerDone = false;
     planInstance = this;
+    isRequestInProcess = false;
 
     constructor() {
         super('go_partner_receiver');
@@ -38,14 +39,28 @@ export default class GoPartnerReceiver extends Plan {
 
         // The message is to coordinate on the delivery
         if (message.type === 'go_partner') {
+            // if (this.isRequestInProcess)
+            //     return;
+            // this.isRequestInProcess = true;
+            // let prioritizedPlans = ['go_partner_receiver', 'go_partner_initiator', 'go_deliver'];
+            // if (prioritizedPlans.includes(agent.intention_queue[0].id)) {
+            //     this.isRequestInProcess = false;
+            //     reply(JSON.stringify({
+            //         type: 'go_partner_response',
+            //         success: false,
+            //         position: me
+            //     }))
+            //     return false;
+            // }
             let closestDelivery = findClosestDelivery([], me);
 
-            let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y, true]);
+            let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y, false]);
 
             logDebug(4, "[GoPartner] Found path to closest: ", path)
 
             // If there is no path to the delivery, failure!
             if (!path || path.length == 0) {
+                this.isRequestInProcess = true;
                 reply(JSON.stringify({
                     type: 'go_partner_response',
                     success: false,
@@ -58,6 +73,7 @@ export default class GoPartnerReceiver extends Plan {
 
             if (isCellAdjacent(me, partnerLocation)) {
                 logDebug(4, "[GoPartner2] I'm already beside the partner")
+                this.isRequestInProcess = true;
                 reply(JSON.stringify({
                     type: 'go_partner_response',
                     x: partnerLocation.x,
@@ -77,6 +93,7 @@ export default class GoPartnerReceiver extends Plan {
 
             // If no path is found, failure!
             if (!path || path.length == 0) {
+                this.isRequestInProcess = true;
                 reply(JSON.stringify({
                     type: 'go_partner_response',
                     success: false,
@@ -86,11 +103,14 @@ export default class GoPartnerReceiver extends Plan {
             }
 
             // Usual reversal of the path (from me to him), then remove current location
-            path.reverse();
-            path.shift();
+            if (path.length > 1) {
+                path.reverse();
+                path.shift();
+            }
 
             if (path.length <= 1) {
                 // If the agent is already at the partner's location, success!
+                this.isRequestInProcess = true;
                 reply(JSON.stringify({
                     type: 'go_partner_response',
                     x: path[0].x,
@@ -105,6 +125,7 @@ export default class GoPartnerReceiver extends Plan {
             // Otherwise, find the mid point of the path and send it to the partner, then follow the path
             let partnerMidPoint = path[Math.floor(path.length / 2)];
             let myMidPoint = path[Math.floor(path.length / 2) - 1];
+            this.isRequestInProcess = true;
             reply(JSON.stringify({
                 type: 'go_partner_response',
                 x: partnerMidPoint.x,
@@ -116,9 +137,18 @@ export default class GoPartnerReceiver extends Plan {
         } else if (message.type == 'go_partner_abort') {
             // The partner has aborted the plan
             agent.changeIntentionScore('go_partner', [message.position], -1, 'go_partner');
-            this.stop();
         } else if (message.type == 'go_partner_ready') {
             // The partner is ready to meet at the mid point
+            setTimeout(() => {
+                if (!this.goPartnerDone) {
+                    this.stop();
+                    client.say(partner.id, JSON.stringify({
+                        type: 'go_partner_abort',
+                        position: me
+                    }))
+                    agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
+                }
+            }, 2000)
             while (!this.amAtMidPoint) {
                 if (this.stopped)
                     return;
@@ -132,6 +162,17 @@ export default class GoPartnerReceiver extends Plan {
             }))
         } else if (message.type == 'go_partner_done') {
             // The partner is ready to meet at the mid point
+            setTimeout(() => {
+                if (!this.goPartnerDone) {
+                    this.stop();
+                    client.say(partner.id, JSON.stringify({
+                        type: 'go_partner_abort',
+                        position: me
+                    }))
+                    agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
+                }
+            }, 2000)
+
             while (!this.goPartnerDone) {
                 if (this.stopped)
                     return;
@@ -162,10 +203,6 @@ export default class GoPartnerReceiver extends Plan {
      * @param {boolean} initiator
      */
     async execute(midPoint, initiator) {
-        setTimeout(() => {
-            agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
-        }, 5000);
-
         this.amAtMidPoint = false;
         this.goPartnerDone = false;
         this.stopped = false;
@@ -207,8 +244,8 @@ export default class GoPartnerReceiver extends Plan {
         if (me.x % 1 != 0 || me.y % 1 != 0)
             await updateMe();
 
-        if (this.stopped)
-            return false;
+        // if (this.stopped)
+        //     return false;
 
         logDebug(4, 'Me updated!')
 
@@ -225,8 +262,8 @@ export default class GoPartnerReceiver extends Plan {
         //     return false;
         // }
 
-        if (this.stopped)
-            return false;
+        // if (this.stopped)
+        //     return false;
 
         logDebug(4, 'Done!')
         this.goPartnerDone = true;

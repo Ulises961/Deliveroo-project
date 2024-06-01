@@ -81,6 +81,8 @@ export default class GoDeliver extends Plan {
 
             let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y]);
 
+            logDebug(4, 'Path to delivery: ', path)
+
             if (!path || path.length === 0) {
                 retries++;
                 // get latest position and recompute path to second closest delivery
@@ -98,7 +100,14 @@ export default class GoDeliver extends Plan {
             // if (this.stopped)
             //     throw ['stopped']; // if stopped then quit
 
-            let path_completed = await this.subIntention('follow_path', [path]);
+            let path_completed = false;
+            try {
+                path_completed = await this.subIntention('follow_path', [path]);
+            } catch (e) {
+                logDebug(4, 'GoDeliver.execute: error while following path', e)
+            }
+
+            logDebug(4, 'Path completed: ', path_completed)
 
             if (path_completed) {
                 // Wait for the client to update the agent's position
@@ -148,15 +157,13 @@ export default class GoDeliver extends Plan {
                     }
 
                     agent.push({ desire: 'go_partner_initiator', args: [midPointMessage], score: 9999, id: 'go_partner_initiator' }) // Always prioritize the meeting
-                    this.stop();
+                    // this.stop();
                     return;
                 }
             }
         } catch (e) {
             logDebug(4, 'GoDeliver.execute: error while trying to meet partner', e)
         }
-
-
 
         throw ['max retries reached, delivery not completed'];
     }

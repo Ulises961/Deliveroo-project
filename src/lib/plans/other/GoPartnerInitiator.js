@@ -1,6 +1,6 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap, partner, logDebug, map, carriedParcels, findClosestDelivery } from '../../utils/utils.js';
+import { me, parcels, updateMe, partner, logDebug, map, carriedParcels, distance } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 import { blacklist } from '../AgentLoop.js'
 import { isCellAdjacent, goToMidPoint, askResponse } from './GoPartnerUtils.js';
@@ -75,11 +75,6 @@ export default class GoPartnerInitiator extends Plan {
      * @param {boolean} initiator
      */
     async execute(midPoint, initiator) {
-        setTimeout(() => {
-            this.stop();
-            agent.changeIntentionScore('go_partner_initiator', [], -1, 'go_partner_initiator')
-        }, 5000);
-
         if (carriedParcels.length == 0) {
             this.stop();
             return false;
@@ -125,9 +120,11 @@ export default class GoPartnerInitiator extends Plan {
 
         // The initiator needs to put down the parcels, then move one step.
         let parcelsDown = []
+        let retries = 0
         do {
             parcelsDown = await client.putdown();
-        } while (parcelsDown.length == 0)
+            retries++;
+        } while (parcelsDown.length == 0 && retries < 3 && this.stopped)
 
         if (this.stopped)
             return false;
@@ -140,9 +137,9 @@ export default class GoPartnerInitiator extends Plan {
         let stepBackPos = map
             .flatMap(row => row)
             .filter(cell => !cell.fakeFloor)
-            .filter(cell => cell.x !== partnerLocation.x || cell.y !== partnerLocation.y)
-            .filter(cell => cell.x !== midPoint.x || cell.y !== midPoint.y)
+            .filter(cell => cell.x !== me.x || cell.y !== me.y)
             .filter(cell => isCellAdjacent(cell, me))
+            .filter(cell => distance(cell, partner.position) > distance(me, partner.position))
         logDebug(4, 'Cell found: ', stepBackPos)
 
         if (this.stopped)
@@ -155,7 +152,7 @@ export default class GoPartnerInitiator extends Plan {
         }
 
         // Go back one step
-        pathCompleted = await this.subIntention('follow_path', [stepBackPos, true]);
+        pathCompleted = await this.subIntention('follow_path', [[stepBackPos[0]], true]);
 
         if (this.stopped)
             return false;

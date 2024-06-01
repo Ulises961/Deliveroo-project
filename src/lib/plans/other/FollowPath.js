@@ -11,7 +11,7 @@ export default class FollowPath extends Plan {
         return desire === 'follow_path'
     }
 
-    async execute(path, skipParcel) {
+    async execute(path, skipParcel = false) {
         this.stopped = false;
 
         if (!path || path.length == 0) {
