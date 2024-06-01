@@ -78,7 +78,7 @@ export async function askResponse(message, planInstance) {
             try {
                 response = JSON.parse(response);
                 if (response.type === message.type + '_response') {
-                    return true;
+                    return response;
                 }
             } catch (ignored) { }
         }

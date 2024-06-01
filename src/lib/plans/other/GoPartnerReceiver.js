@@ -45,6 +45,8 @@ export default class GoPartnerReceiver extends Plan {
 
             let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y]);
 
+            logDebug(4, "[GoPartner] Found path to closest: ", path)
+
             // If there is no path to the delivery, failure!
             if (!path || path.length == 0) {
                 reply(JSON.stringify({
@@ -57,8 +59,24 @@ export default class GoPartnerReceiver extends Plan {
 
             let partnerLocation = message.position;
 
+            if (isCellAdjacent(me, partnerLocation)) {
+                logDebug(4, "[GoPartner2] I'm already beside the partner")
+                reply(JSON.stringify({
+                    type: 'go_partner_response',
+                    x: partnerLocation.x,
+                    y: partnerLocation.y,
+                    position: me,
+                    success: true,
+                }))
+                // this.stop();
+                agent.push({ desire: 'go_partner_receiver', args: [{ x: me.x, y: me.y, position: partnerLocation }], score: 9999, id: 'go_partner_receiver' });
+                return true;
+            }
+
             // Find a path from me to the other agent
             path = await this.subIntention('a_star', [partnerLocation.x, partnerLocation.y]);
+
+            logDebug(4, "[GoPartner3] Path to partner: ", path)
 
             // If no path is found, failure!
             if (!path || path.length == 0) {
@@ -74,18 +92,18 @@ export default class GoPartnerReceiver extends Plan {
             path.reverse();
             path.shift();
 
-            if (path.length <= 1) {
-                // If the agent is already at the partner's location, success!
-                reply(JSON.stringify({
-                    type: 'go_partner_response',
-                    x: path[0].x,
-                    y: path[0].y,
-                    position: me,
-                    success: true,
-                }))
-                agent.push({ desire: 'go_partner_receiver', args: [{ x: me.x, y: me.y, position: path[0] }], score: 9999, id: 'go_partner_receiver' });
-                return true;
-            }
+            // if (path.length <= 1) {
+            //     // If the agent is already at the partner's location, success!
+            //     reply(JSON.stringify({
+            //         type: 'go_partner_response',
+            //         x: path[0].x,
+            //         y: path[0].y,
+            //         position: me,
+            //         success: true,
+            //     }))
+            //     agent.push({ desire: 'go_partner_receiver', args: [{ x: me.x, y: me.y, position: path[0] }], score: 9999, id: 'go_partner_receiver' });
+            //     return true;
+            // }
 
             // Otherwise, find the mid point of the path and send it to the partner, then follow the path
             let partnerMidPoint = path[Math.floor(path.length / 2)];

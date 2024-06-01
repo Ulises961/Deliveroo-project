@@ -2,6 +2,7 @@ import Plan from '../Plan.js';
 import client from '../../utils/client.js';
 import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, logDebug, distance, partner, map } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
+import { askResponse } from './GoPartnerUtils.js';
 
 export default class GoDeliver extends Plan {
 
@@ -62,7 +63,7 @@ export default class GoDeliver extends Plan {
         this.stopped = false;
         let closestDelivery = findClosestDelivery([], me);
         let retries = 0;
-        const MAX_RETRIES = deliveryPoints.length * deliveryPoints.length * 2;
+        const MAX_RETRIES = 3;
 
         const triedDeliveryPoints = [closestDelivery.point];
 
@@ -127,33 +128,25 @@ export default class GoDeliver extends Plan {
         try {
             path = path.reverse(); // Start from the current cell
             path.shift(); // Remove the current cell
-            
+
             logDebug(4, 'GoDeliver.execute: max retries reached, trying to meet partner', closestDelivery)
 
             logDebug(4, 'Min width: ', this.minWidthInPathIsOne(path), ' partner: ', partner.id, ' distance: ', closestDelivery.distance, distance(partner.position, closestDelivery.point));
 
-            if (this.minWidthInPathIsOne(path) && partner.id && distance(me, closestDelivery.point) > distance(partner.position, closestDelivery.point)) {
+            if (this.minWidthInPathIsOne(path)) {
                 logDebug(4, 'GoDeliver.execute: partner is closer to delivery point, trying to meet')
-                try {
-                    let midPointMessage = await client.ask(partner.id, JSON.stringify({ type: 'go_partner', position: me }))
+                let midPointMessage = await askResponse({ type: 'go_partner', position: me }, this)
 
-                    logDebug(4, 'GoDeliver.execute: partner response', midPointMessage)
+                logDebug(4, 'GoDeliver.execute: partner response', midPointMessage)
 
-                    if (midPointMessage) {
-                        let midPoint = JSON.parse(midPointMessage);
-
-                        if (!midPoint.success) {
-                            logDebug(3, 'GoDeliver.execute: partner rejected meeting');
-                            this.stop();
-                            throw ['partner rejected meeting'];
-                        }
-
-                        agent.push({ desire: 'go_partner_initiator', args: [midPoint], score: 9999, id: 'go_partner_initiator' }) // Always prioritize the meeting
+                if (midPointMessage) {
+                    if (!midPointMessage.success) {
+                        logDebug(4, 'GoDeliver.execute: partner rejected meeting');
                         this.stop();
-                        return;
+                        throw ['partner rejected meeting'];
                     }
-                } catch (e) {
-                    logDebug(0, 'GoDeliver.execute: no response from partner');
+
+                    agent.push({ desire: 'go_partner_initiator', args: [midPointMessage], score: 9999, id: 'go_partner_initiator' }) // Always prioritize the meeting
                     this.stop();
                     return;
                 }
