@@ -30,6 +30,7 @@ export default class GoDeliver extends Plan {
      * Check the path to see if there is a corridor with a width of 1 in the path
      */
     minWidthInPathIsOne(path) {
+        let isWidthOne = false;
         for (let i = 0; i < path.length - 1; i++) {
             // Current cell and next cell in the path
             let x = path[i].x;
@@ -44,7 +45,7 @@ export default class GoDeliver extends Plan {
                 let cell1 = this.checkCellInMap(checkX, checkY1);
                 let cell2 = this.checkCellInMap(checkX, checkY2);
 
-                return cell1.fakeFloor && cell2.fakeFloor;
+                isWidthOne = isWidthOne || (cell1.fakeFloor && cell2.fakeFloor);
             } else { // Going up or down
                 let checkY = y;
                 let checkX1 = x - 1;
@@ -53,10 +54,10 @@ export default class GoDeliver extends Plan {
                 let cell1 = this.checkCellInMap(checkX1, checkY);
                 let cell2 = this.checkCellInMap(checkX2, checkY);
 
-                return cell1.fakeFloor && cell2.fakeFloor;
+                isWidthOne = isWidthOne || (cell1.fakeFloor && cell2.fakeFloor);
             }
         }
-        return false;
+        return isWidthOne;
     }
 
     async execute(predicate) {
@@ -127,11 +128,11 @@ export default class GoDeliver extends Plan {
 
         try {
             path = path.reverse(); // Start from the current cell
-            path.shift(); // Remove the current cell
+            // path.shift(); // Remove the current cell
 
             logDebug(4, 'GoDeliver.execute: max retries reached, trying to meet partner', closestDelivery)
 
-            logDebug(4, 'Min width: ', this.minWidthInPathIsOne(path), ' partner: ', partner.id, ' distance: ', closestDelivery.distance, distance(partner.position, closestDelivery.point));
+            logDebug(4, 'Min width: ', this.minWidthInPathIsOne(path), ' partner: ', partner.id);
 
             if (this.minWidthInPathIsOne(path)) {
                 logDebug(4, 'GoDeliver.execute: partner is closer to delivery point, trying to meet')
