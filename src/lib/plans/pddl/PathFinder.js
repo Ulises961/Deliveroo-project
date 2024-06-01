@@ -1,6 +1,6 @@
 import { onlineSolver, Beliefset } from "@unitn-asa/pddl-client";
 import PddlProblem from "./PddlProblem.js";
-import { agentsMap, map, me, parcels, validCells, getAgentsMap, updateAgentsMap} from "../../utils/utils.js";
+import { agentsMap, map, me, parcels, validCells, getAgentsMap, updateAgentsMap, logDebug} from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';
 
@@ -94,7 +94,8 @@ export default class PathFinder extends Plan {
         if (!plan) {
             return [];
         }
-        return plan.map(p => p.action.toLowerCase());
+
+        return plan;
     }
 
     /**
