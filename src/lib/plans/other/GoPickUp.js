@@ -66,6 +66,9 @@ export default class GoPickUp extends Plan {
                 parcels.delete(parcelId);
                 agent.changeIntentionScore('go_pick_up', [], -1, parcelId);
             })
+        } else {
+            agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+            parcels.delete(predicate.id)
         }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit

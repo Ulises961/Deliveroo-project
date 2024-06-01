@@ -11,9 +11,9 @@ export default class FollowPath extends Plan {
         return desire === 'follow_path'
     }
 
-    async execute(path) {
+    async execute(path, skipParcel) {
         this.stopped = false;
-      
+
         if (!path || path.length == 0) {
             return true;
         }
@@ -45,15 +45,22 @@ export default class FollowPath extends Plan {
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))
 
-            // There are parcels in the current cell
-            let parcelInCell = Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)
-            if (parcelInCell) {
-                await client.pickup();
-                carryParcel(parcelInCell);
-            }
-
             if (me?.x === target?.x && me?.y === target?.y)
                 return true;
+
+            // There are parcels in the current cell
+            let parcelInCell = Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)
+            if (!skipParcel && parcelInCell) {
+                let parcelsFound = await client.pickup();
+                if (parcelsFound.length > 0) {
+                    parcelsFound.forEach(parcelId => {
+                        let parcel = parcels.get(parcelId) || { id: parcelId, x: predicate.x, y: predicate.y, reward: 10 };
+                        carryParcel(parcel);
+                        parcels.delete(parcelId);
+                        agent.changeIntentionScore('go_pick_up', [], -1, parcelId);
+                    });
+                }
+            }
 
             // There is an agent in the target cell
             if (getAgentsMap().find(agent => target.x === agent.x && target.y === agent.y)) {

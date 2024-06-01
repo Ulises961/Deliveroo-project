@@ -74,7 +74,7 @@ export default class GoDeliver extends Plan {
             // if (this.stopped)
             //     throw ['stopped']; // if stopped then quit
 
-            if (!closestDelivery.point) {
+            if (!closestDelivery || !closestDelivery.point) {
                 retries++;
                 continue;
             }
@@ -85,7 +85,7 @@ export default class GoDeliver extends Plan {
                 retries++;
                 // get latest position and recompute path to second closest delivery
                 closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
-                logDebug(2, 'No path found, new delivery point: ', closestDelivery.point)
+                logDebug(4, 'No path found, new delivery point: ', closestDelivery.point)
                 triedDeliveryPoints.push(closestDelivery.point);
                 continue;
             }

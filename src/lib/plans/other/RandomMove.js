@@ -45,6 +45,9 @@ export default class RandomMove extends Plan {
         if (!destination) {
             throw ['no destination found'];
         }
+        if (destination.x === me.x && destination.y === me.y) {
+            throw ['same destination as current position'];
+        }
         logDebug(0, 'RandomMove: destination', destination, index);
         let path = await this.subIntention('a_star', [destination.x, destination.y]);
         path.reverse();

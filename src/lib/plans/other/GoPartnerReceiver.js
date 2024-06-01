@@ -19,9 +19,6 @@ export default class GoPartnerReceiver extends Plan {
     }
 
     async onMsg(id, name, messageString, reply) {
-        if (this.stopped)
-            return;
-
         if (!partner || id !== partner.id) // Not my partner, ignore the message
             return;
 
@@ -43,7 +40,7 @@ export default class GoPartnerReceiver extends Plan {
         if (message.type === 'go_partner') {
             let closestDelivery = findClosestDelivery([], me);
 
-            let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y]);
+            let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y, true]);
 
             logDebug(4, "[GoPartner] Found path to closest: ", path)
 
@@ -92,18 +89,18 @@ export default class GoPartnerReceiver extends Plan {
             path.reverse();
             path.shift();
 
-            // if (path.length <= 1) {
-            //     // If the agent is already at the partner's location, success!
-            //     reply(JSON.stringify({
-            //         type: 'go_partner_response',
-            //         x: path[0].x,
-            //         y: path[0].y,
-            //         position: me,
-            //         success: true,
-            //     }))
-            //     agent.push({ desire: 'go_partner_receiver', args: [{ x: me.x, y: me.y, position: path[0] }], score: 9999, id: 'go_partner_receiver' });
-            //     return true;
-            // }
+            if (path.length <= 1) {
+                // If the agent is already at the partner's location, success!
+                reply(JSON.stringify({
+                    type: 'go_partner_response',
+                    x: path[0].x,
+                    y: path[0].y,
+                    position: me,
+                    success: true,
+                }))
+                agent.push({ desire: 'go_partner_receiver', args: [{ x: me.x, y: me.y, position: path[0] }], score: 9999, id: 'go_partner_receiver' });
+                return true;
+            }
 
             // Otherwise, find the mid point of the path and send it to the partner, then follow the path
             let partnerMidPoint = path[Math.floor(path.length / 2)];
@@ -152,6 +149,13 @@ export default class GoPartnerReceiver extends Plan {
         return desire === 'go_partner_receiver'
     }
 
+    stop() {
+        client.removeListener('msg', this.onMsg);
+        this.stopped = true;
+        for (let subIntention of this.sub_intentions)
+            subIntention.stop();
+    }
+
     /**
      * @param {{x: number, y: number, position: {x: number, y: number}}} midPoint
      * @param {boolean} initiator
@@ -175,6 +179,9 @@ export default class GoPartnerReceiver extends Plan {
             return false;
         }
 
+        if (this.stopped)
+            return false;
+
         // Modify the variable, so the listener knows the agent is at the mid point
         this.amAtMidPoint = true;
 
@@ -189,6 +196,9 @@ export default class GoPartnerReceiver extends Plan {
             return false;
         }
 
+        if (this.stopped)
+            return false;
+
         pathCompleted = await this.subIntention('follow_path', [[{ x: partnerLocation.x, y: partnerLocation.y }]]);
 
         logDebug(4, 'Path completed!')
@@ -196,26 +206,33 @@ export default class GoPartnerReceiver extends Plan {
         if (me.x % 1 != 0 || me.y % 1 != 0)
             await updateMe();
 
+        if (this.stopped)
+            return false;
+
         logDebug(4, 'Me updated!')
 
         let pickup = await client.pickup();
         logDebug(4, 'Parcel picked up!', pickup)
 
-        if (pickup.length < 1) {
-            logDebug(4, 'Didn\' pick up any parcel!!!!');
-            await client.say(partner.id, JSON.stringify({
-                type: 'go_partner_abort',
-                position: me
-            }))
-            agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
+        // if (pickup.length < 1) {
+        //     logDebug(4, 'Didn\' pick up any parcel!!!!');
+        //     await client.say(partner.id, JSON.stringify({
+        //         type: 'go_partner_abort',
+        //         position: me
+        //     }))
+        //     agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
+        //     return false;
+        // }
+
+        if (this.stopped)
             return false;
-        }
 
         logDebug(4, 'Done!')
         this.goPartnerDone = true;
 
+        let delivery = await this.subIntention('go_deliver', []);
+
         agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver');
-        agent.changeIntentionScore('go_deliver', [], 10000, 'go_deliver');
 
         return true;
     }
