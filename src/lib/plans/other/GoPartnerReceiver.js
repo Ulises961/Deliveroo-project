@@ -116,6 +116,7 @@ export default class GoPartnerReceiver extends Plan {
         } else if (message.type == 'go_partner_abort') {
             // The partner has aborted the plan
             agent.changeIntentionScore('go_partner', [message.position], -1, 'go_partner');
+            this.stop();
         } else if (message.type == 'go_partner_ready') {
             // The partner is ready to meet at the mid point
             while (!this.amAtMidPoint) {
