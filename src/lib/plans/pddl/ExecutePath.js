@@ -1,6 +1,6 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { me, parcels, updateMe, carryParcel, getAgentsMap } from '../../utils/utils.js';
+import { me, parcels, updateMe, carryParcel, getAgentsMap, logDebug } from '../../utils/utils.js';
 
 export default class ExecutePath extends Plan {
     constructor() {
@@ -12,12 +12,15 @@ export default class ExecutePath extends Plan {
     }
 
     async execute(path, target) {
+        
+        path = path.map(p => p.action.toLowerCase());
+        
         this.stopped = false;
-      
+
         if (!path || path.length == 0) {
             return true;
         }
-        
+
         let retries = 0
         const MAX_RETRIES = 5 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {

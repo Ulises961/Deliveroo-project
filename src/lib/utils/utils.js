@@ -200,6 +200,14 @@ const logDebug = function logDebug(level, ...args) {
     }
 }
 
+const getCells = function getCells(path) {
+    return path.map(p => {
+        const planArgs = p.args;
+        return { x: planArgs[2][1], y: planArgs[2][3], action: p.action };
+
+    });
+}
+
 export {
     distance,
     updateMe,
@@ -222,5 +230,6 @@ export {
     updateAgentsMap,
     getAgentsMap,
     isCellReachable,
-    logDebug
+    logDebug,
+    getCells
 };
