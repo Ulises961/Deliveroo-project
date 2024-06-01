@@ -32,7 +32,7 @@ export async function goToMidPoint(midPoint, intentionID, planInstance) {
     path = path.reverse(); // From starting point
     path.shift(); // Remove current cell
 
-    let pathCompleted = await planInstance.subIntention('follow_path', [path]);
+    let pathCompleted = await planInstance.subIntention('follow_path', [path, true]);
 
     if (!pathCompleted && !isCellAdjacent(me, partner.position) && !(me.x === partner.position.x && me.y === partner.position.y)) {
         // Send a message to the partner to abort
