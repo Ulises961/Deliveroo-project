@@ -33,6 +33,18 @@ export default class GoDeliver extends Plan {
 
             let path = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y]);
 
+            if (this.stopped)
+                throw ['stopped']; // if stopped then quit
+
+            if (path.length === 0) {
+                retries++;
+                // get latest position and recompute path to second closest delivery
+                updateMe();
+                closestDelivery = findClosestDelivery(triedDeliveryPoints, me);
+                triedDeliveryPoints.push(closestDelivery.point);
+                continue;
+            }
+
             if (path.length === 0) {
                 retries++;
                 // get latest position and recompute path to second closest delivery

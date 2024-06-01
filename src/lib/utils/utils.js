@@ -132,6 +132,8 @@ const configs = {
 const carriedParcels = [];
 
 const carryParcel = (parcel) => {
+    if (!parcel)
+        return;
     parcels.delete(parcel.id);
     if (carriedParcels.find(p => p.id === parcel.id)) {
         return;
@@ -170,6 +172,7 @@ const getAgentsMap = () => {
     // Only take agents that have been seen recently
     const MAX_TIME = 5000; // 5sec
     return Array.from(agentsMap.values())
+        .filter(agent => agent.name !== 'god')
         .filter(agent => Date.now() - agent.discoveryTime < MAX_TIME);
 }
 
