@@ -1,6 +1,6 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { distance, me, deliveryPoints, parcels, carryParcel, logDebug, partner } from '../../utils/utils.js';
+import { distance, me, deliveryPoints, parcels, carryParcel, logDebug, partner, updateMe } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 import { updateCarriedParcelsScore, computeParcelScore, blacklist } from '../AgentLoop.js';
 
@@ -31,7 +31,7 @@ export default class GoPickUp extends Plan {
                     client.ask(partner.id, JSON.stringify(question)),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
                 ])
-    
+
                 if (response === 'no') {
                     blacklist.push(predicate.id)
                     agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
@@ -42,34 +42,37 @@ export default class GoPickUp extends Plan {
             }
         }
 
-        let path = await this.subIntention('find_path', [predicate.x, predicate.y]);
-        logDebug(0, 'GoPickUp.execute: path ', path);
-      
-        if (path.length === 0) {
-            agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+        if (predicate.x !== me.x || predicate.y !== me.y) {
 
-            throw ['No path found'];
+            let path = await this.subIntention('find_path', [predicate.x, predicate.y]);
+            logDebug(0, 'GoPickUp.execute: path ', path);
+
+            if (path.length === 0) {
+                agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+
+                throw ['No path found'];
+            }
+            let target = { x: predicate.x, y: predicate.y };
+            await this.subIntention('execute_path', [path, target]);
         }
-        let target = {x: predicate.x, y: predicate.y};
-        await this.subIntention('execute_path', [path, target]);
 
         if (me.x % 1 != 0 || me.y % 1 != 0)
-            await client.onYou(res => res());
+            await updateMe();
 
         let pickup = await client.pickup();
 
         if (pickup.length > 0) {
-            pickup.forEach(parcelId => {
-                let parcel = parcels.get(parcelId) || { id: parcelId, x: predicate.x, y: predicate.y, reward: 10 };
-                carryParcel(parcel);
+            pickup.forEach(parcelInfo => {
+                let parcelId = parcelInfo.id
+                let parcel = parcels.get(parcelId) || { id: parcelId, x: predicate.x, y: predicate.y, reward: parceLinfo.reward };
+                carryParcel(parcelInfo);
                 parcels.delete(parcelId);
                 agent.changeIntentionScore('go_pick_up', [], -1, parcelId);
             })
         }
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
-
         updateCarriedParcelsScore();
+
 
         return true;
     }

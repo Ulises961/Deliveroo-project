@@ -53,9 +53,10 @@ export default class FollowPath extends Plan {
             if (!skipParcel && parcelInCell) {
                 let parcelsFound = await client.pickup();
                 if (parcelsFound.length > 0) {
-                    parcelsFound.forEach(parcelId => {
-                        let parcel = parcels.get(parcelId) || { id: parcelId, x: predicate.x, y: predicate.y, reward: 10 };
-                        carryParcel(parcel);
+                    parcelsFound.forEach(parcelInfo => {
+                        let parcelId = parcelInfo.id;
+                        let parcel = parcels.get(parcelId) || { id: parcelId, x: predicate.x, y: predicate.y, reward: parcelInfo.reward };
+                        carryParcel(parcelInfo);
                         parcels.delete(parcelId);
                         agent.changeIntentionScore('go_pick_up', [], -1, parcelId);
                     });
