@@ -34,6 +34,7 @@ export default class GoPickUp extends Plan {
 
                 if (response === 'no') {
                     blacklist.push(predicate.id)
+                    parcels.delete(predicate.id)
                     agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
                     return false;
                 }

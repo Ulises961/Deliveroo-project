@@ -1,6 +1,6 @@
 import { onlineSolver, Beliefset } from "@unitn-asa/pddl-client";
 import PddlProblem from "./PddlProblem.js";
-import { agentsMap, map, me, parcels, validCells, getAgentsMap, isCellReachable, logDebug} from "../../utils/utils.js";
+import { partner, map, me, parcels, validCells, getAgentsMap, isCellReachable, logDebug} from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';
 
@@ -63,7 +63,7 @@ export default class PathFinder extends Plan {
                 }
             });
 
-        agentsMap
+        getAgentsMap()
             .filter(agent => agent.id !== me.id && // Skip itself
                 (!skipPartner || agent.id !== partner.id)) // If skipPartner is true, don't consider the partner
             .forEach(agent => {
