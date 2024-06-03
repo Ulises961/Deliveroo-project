@@ -1,7 +1,8 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { findClosestDelivery, me, carriedParcels, updateMe, deliveryPoints, getAgentsMap, map, logDebug } from '../../utils/utils.js';
+import { findClosestDelivery, me, carriedParcels, map, logDebug, getCells, partner } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
+import { askResponse } from './GoPartnerUtils.js';
 
 export default class GoDeliver extends Plan {
 
@@ -11,6 +12,52 @@ export default class GoDeliver extends Plan {
 
     isApplicableTo(desire) {
         return desire === this.name
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {{x: number, y: number, delivery: boolean, fakeFloor: boolean }}
+     */
+    checkCellInMap(x, y) {
+        if (x < 0 || y < 0 || x >= map[0].length || y >= map[0].length) {
+            return { x: x, y: y, delivery: false, fakeFloor: true };
+        }
+        return map[x][y];
+    }
+
+    /**
+     * Check the path to see if there is a corridor with a width of 1 in the path
+     */
+    minWidthInPathIsOne(path) {
+        let isWidthOne = false;
+        for (let i = 0; i < path.length - 1; i++) {
+            // Current cell and next cell in the path
+            let x = path[i].x;
+            let y = path[i].y;
+            let nextX = path[i + 1].x;
+
+            if (nextX !== x) { // Going left or right
+                let checkY1 = y - 1;
+                let checkY2 = y + 1;
+                let checkX = x;
+
+                let cell1 = this.checkCellInMap(checkX, checkY1);
+                let cell2 = this.checkCellInMap(checkX, checkY2);
+
+                isWidthOne = isWidthOne || (cell1.fakeFloor && cell2.fakeFloor);
+            } else { // Going up or down
+                let checkY = y;
+                let checkX1 = x - 1;
+                let checkX2 = x + 1;
+
+                let cell1 = this.checkCellInMap(checkX1, checkY);
+                let cell2 = this.checkCellInMap(checkX2, checkY);
+
+                isWidthOne = isWidthOne || (cell1.fakeFloor && cell2.fakeFloor);
+            }
+        }
+        return isWidthOne;
     }
 
     async execute(predicate) {
@@ -72,8 +119,9 @@ export default class GoDeliver extends Plan {
 
         closestDelivery = findClosestDelivery([], me);
 
-        let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y, true]);
+        let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, true]);
 
+        let path = getCells(actions);
         logDebug(4, '#########################')
 
         try {
