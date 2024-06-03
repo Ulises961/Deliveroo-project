@@ -122,6 +122,7 @@ export default class GoDeliver extends Plan {
         let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, true]);
 
         let path = getCells(actions);
+        path.push({ x: me.x, y: me.y })
         logDebug(4, '#########################')
 
         try {

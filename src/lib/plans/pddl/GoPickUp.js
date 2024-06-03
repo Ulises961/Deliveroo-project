@@ -65,7 +65,6 @@ export default class GoPickUp extends Plan {
         if (pickup.length > 0) {
             pickup.forEach(parcelInfo => {
                 let parcelId = parcelInfo.id
-                let parcel = parcels.get(parcelId) || { id: parcelId, x: predicate.x, y: predicate.y, reward: parceLinfo.reward };
                 carryParcel(parcelInfo);
                 parcels.delete(parcelId);
                 agent.changeIntentionScore('go_pick_up', [], -1, parcelId);

@@ -94,7 +94,7 @@ export default class GoPartnerReceiver extends Plan {
             // Usual reversal of the path (from me to him), then remove current location
             if (path.length > 1) {
                 path.reverse();
-                path.shift();
+                // path.shift();
             }
 
             if (path.length <= 1) {
