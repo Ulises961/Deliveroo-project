@@ -87,12 +87,14 @@ export default class GoPartnerInitiator extends Plan {
 
         logDebug(4, 'Starting GoPartner!', midPoint, initiator)
 
-        let pathCompleted = await goToMidPoint(midPoint, 'go_partner_initiator', this);
+        let pathCompleted = false;
+        if (me.x !== midPoint.x || me.y !== midPoint.y)
+            pathCompleted = await goToMidPoint(midPoint, 'go_partner_initiator', this);
 
         if (this.stopped)
             return false;
 
-        if (!pathCompleted) {
+        if (!pathCompleted && (me.x !== midPoint.x && me.y !== midPoint.y) && !isCellAdjacent(me, partnerLocation)) {
             this.stop();
             return false;
         }
@@ -142,20 +144,27 @@ export default class GoPartnerInitiator extends Plan {
             .filter(cell => distance(cell, partner.position) > distance(me, partner.position))
         logDebug(4, 'Cell found: ', stepBackPos)
 
-        if (this.stopped)
-            return false;
+        // if (this.stopped)
+        //     return false;
 
-        if (!stepBackPos || stepBackPos.length === 0) {
-            logDebug(4, 'Well, error during go_partner, we are f*cked');
-            agent.changeIntentionScore('go_partner_initiator', [], -1, 'go_partner_initiator')
-            return false;
-        }
+        // if (!stepBackPos || stepBackPos.length === 0) {
+        //     logDebug(4, 'Well, error during go_partner, we are f*cked');
+        //     agent.changeIntentionScore('go_partner_initiator', [], -1, 'go_partner_initiator')
+        //     return false;
+        // }
 
         // Go back one step
-        pathCompleted = await this.subIntention('follow_path', [[stepBackPos[0]], true]);
+        let direction = 'right'
+        if (stepBackPos[0].x < me.x)
+            direction = 'left'
+        else if (stepBackPos[0].y < me.y)
+            direction = 'down'
+        else if (stepBackPos[0].y > me.y)
+            direction = 'up'
+        pathCompleted = await this.subIntention('execute_path', [[{action: direction}], stepBackPos[0]]);
 
-        if (this.stopped)
-            return false;
+        // if (this.stopped)
+        //     return false;
 
         logDebug(4, 'Path completed!')
 

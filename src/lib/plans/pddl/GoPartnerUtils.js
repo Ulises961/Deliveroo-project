@@ -1,5 +1,5 @@
 import client from '../../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap, partner, logDebug, map, carriedParcels, findClosestDelivery } from '../../utils/utils.js';
+import { me, updateMe, partner, logDebug, getCells } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 import Plan from '../Plan.js';
 
@@ -15,24 +15,9 @@ export function isCellAdjacent(firstCell, otherCell) {
  * @returns 
  */
 export async function goToMidPoint(midPoint, intentionID, planInstance) {
-    let path = await planInstance.subIntention('find_path', [midPoint.x, midPoint.y]);
+    let actions = await planInstance.subIntention('find_path', [midPoint.x, midPoint.y]);
 
-    // If not path if found, failure!
-    if (!path || path.length == 0) {
-        // Send a message to the partner to abort
-        logDebug(2, 'No path found!')
-        await client.say(partner.id, JSON.stringify({
-            type: 'go_partner_abort',
-            position: me
-        }))
-        agent.changeIntentionScore(intentionID, [], -1, intentionID)
-        return false;
-    }
-
-    path = path.reverse(); // From starting point
-    path.shift(); // Remove current cell
-
-    let pathCompleted = await planInstance.subIntention('follow_path', [path, true]);
+    let pathCompleted = await planInstance.subIntention('execute_path', [actions]);
 
     if (!pathCompleted && !isCellAdjacent(me, partner.position) && !(me.x === partner.position.x && me.y === partner.position.y)) {
         // Send a message to the partner to abort
@@ -70,7 +55,7 @@ export async function askResponse(message, planInstance) {
     while (!response && retries++ < MAX_RETRIES && !planInstance.stopped) {
         response = await Promise.race([
             client.ask(partner.id, JSON.stringify(message)),
-            new Promise(resolve => setTimeout(resolve, 1000))
+            new Promise(resolve => setTimeout(resolve, 15000))
         ]);
         await new Promise(res => setImmediate(res));
 

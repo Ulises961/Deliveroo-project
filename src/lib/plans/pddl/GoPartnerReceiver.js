@@ -1,6 +1,6 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap, partner, logDebug, map, carriedParcels, findClosestDelivery } from '../../utils/utils.js';
+import { getCells, me, updateMe, partner, logDebug, findClosestDelivery } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 import { blacklist } from '../AgentLoop.js'
 import { isCellAdjacent, goToMidPoint, askResponse } from './GoPartnerUtils.js';
@@ -41,7 +41,8 @@ export default class GoPartnerReceiver extends Plan {
         if (message.type === 'go_partner') {
             let closestDelivery = findClosestDelivery([], me);
 
-            let path = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, false]);
+            let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y]);
+            let path = getCells(actions);
 
             logDebug(4, "[GoPartner] Found path to closest: ", path)
 
@@ -74,7 +75,8 @@ export default class GoPartnerReceiver extends Plan {
             }
 
             // Find a path from me to the other agent
-            path = await this.subIntention('find_path', [partnerLocation.x, partnerLocation.y]);
+            actions = await this.subIntention('find_path', [partnerLocation.x, partnerLocation.y]);
+            path = getCells(actions);
 
             logDebug(4, "[GoPartner3] Path to partner: ", path)
 
@@ -197,15 +199,17 @@ export default class GoPartnerReceiver extends Plan {
 
         logDebug(4, 'Starting GoPartner!', midPoint, initiator)
 
-        let pathCompleted = await goToMidPoint(midPoint, 'go_partner_receiver', this);
+        let pathCompleted = false;
+        if (me.x !== midPoint.x || me.y !== midPoint.y) 
+            pathCompleted = await goToMidPoint(midPoint, 'go_partner_receiver', this);
 
-        if (!pathCompleted) {
+        if (!pathCompleted && (me.x !== midPoint.x && me.y !== midPoint.y) && !isCellAdjacent(me, partnerLocation)) {
             this.stop();
             return false;
         }
 
-        if (this.stopped)
-            return false;
+        // if (this.stopped)
+        //     return false;
 
         // Modify the variable, so the listener knows the agent is at the mid point
         this.amAtMidPoint = true;
@@ -215,16 +219,23 @@ export default class GoPartnerReceiver extends Plan {
         // The other agent needs to move one step, then get the parcels
         let proceedResponse = await askResponse({ type: 'go_partner_proceed', position: me }, this)
 
-        if (!proceedResponse) {
-            agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
-            this.stop();
-            return false;
-        }
+        // if (!proceedResponse) {
+        //     agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
+        //     this.stop();
+        //     return false;
+        // }
 
-        if (this.stopped)
-            return false;
+        // if (this.stopped)
+        //     return false;
+        let direction = 'right'
+        if (me.x > partnerLocation.x)
+            direction = 'left'
+        else if (me.y > partnerLocation.y)
+            direction = 'up'
+        else if (me.y < partnerLocation.y)
+            direction = 'down'
 
-        pathCompleted = await this.subIntention('follow_path', [[{ x: partnerLocation.x, y: partnerLocation.y }]]);
+        pathCompleted = await this.subIntention('execute_path', [[{action: direction }], partnerLocation]);
 
         logDebug(4, 'Path completed!')
 
@@ -257,7 +268,7 @@ export default class GoPartnerReceiver extends Plan {
 
         let delivery = await this.subIntention('go_deliver', []);
 
-        agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver');
+        // agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver');
 
         return true;
     }

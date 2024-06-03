@@ -1,6 +1,6 @@
 import { onlineSolver, Beliefset } from "@unitn-asa/pddl-client";
 import PddlProblem from "./PddlProblem.js";
-import { agentsMap, map, me, parcels, validCells, getAgentsMap, updateAgentsMap, logDebug} from "../../utils/utils.js";
+import { agentsMap, map, me, parcels, validCells, getAgentsMap, isCellReachable, logDebug} from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';
 
@@ -32,11 +32,13 @@ export default class PathFinder extends Plan {
         /** Problem */
         const myBeliefset = new Beliefset();
 
-        let margin = 3;
-        let filteredCells = validCells.filter(cell => {
-            return (cell.x >= Math.min(me.x, x) - margin && cell.x <= Math.max(me.x, x) + margin) &&
-                (cell.y >= Math.min(me.y, y) - margin && cell.y <= Math.max(me.y, y) + margin);
-        });
+        let margin = 2;
+        let filteredCells = validCells
+            .filter(cell => isCellReachable(cell.x, cell.y))
+            .filter(cell => {
+                return (cell.x >= Math.min(me.x, x) - margin && cell.x <= Math.max(me.x, x) + margin) &&
+                    (cell.y >= Math.min(me.y, y) - margin && cell.y <= Math.max(me.y, y) + margin);
+            });
 
         filteredCells
             .forEach(tile => {

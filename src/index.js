@@ -6,7 +6,7 @@ import {
 import { agent } from "./lib/utils/agent.js";
 import client, { askPartnerId, passOwnId } from './lib/utils/client.js';
 import { parcelsLoop } from './lib/plans/AgentLoop.js'
-import './lib/plans/other/Library.js'
+import './lib/plans/pddl/Library.js'
 
 /**
  * Belief revision function

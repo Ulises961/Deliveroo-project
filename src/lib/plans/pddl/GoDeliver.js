@@ -134,7 +134,8 @@ export default class GoDeliver extends Plan {
 
             if (this.minWidthInPathIsOne(path)) {
                 logDebug(4, 'GoDeliver.execute: partner is closer to delivery point, trying to meet')
-                let midPointMessage = await askResponse({ type: 'go_partner', position: me }, this)
+                let midPointMessage = await client.ask(partner.id, JSON.stringify({ type: 'go_partner', position: me }))
+                midPointMessage = JSON.parse(midPointMessage)
 
                 logDebug(4, 'GoDeliver.execute: partner response', midPointMessage)
 
