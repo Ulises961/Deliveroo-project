@@ -15,7 +15,7 @@ export function isCellAdjacent(firstCell, otherCell) {
  * @returns 
  */
 export async function goToMidPoint(midPoint, intentionID, planInstance) {
-    let actions = await planInstance.subIntention('find_path', [midPoint.x, midPoint.y]);
+    let actions = await planInstance.subIntention('find_path', [midPoint.x, midPoint.y, true]);
 
     let pathCompleted = await planInstance.subIntention('execute_path', [actions]);
 

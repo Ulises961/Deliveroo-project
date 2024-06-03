@@ -25,7 +25,7 @@ export default class PathFinder extends Plan {
         })
 
     }
-    async execute(x, y) {
+    async execute(x, y, skipPartner) {
         let domain = await this.readFile('./lib/plans/pddl/domain-path-find.pddl');
 
 
@@ -63,10 +63,13 @@ export default class PathFinder extends Plan {
                 }
             });
 
-        agentsMap.forEach(agent => {
-            myBeliefset.declare(`agent agent_${agent.id}`);
-            myBeliefset.declare(`at agent_${agent.id} t${Math.round(agent.x)}_${Math.round(agent.y)}`);
-        });
+        agentsMap
+            .filter(agent => agent.id !== me.id && // Skip itself
+                (!skipPartner || agent.id !== partner.id)) // If skipPartner is true, don't consider the partner
+            .forEach(agent => {
+                myBeliefset.declare(`agent agent_${agent.id}`);
+                myBeliefset.declare(`at agent_${agent.id} t${Math.round(agent.x)}_${Math.round(agent.y)}`);
+            });
 
 
         myBeliefset.declare(`at me t${me.x}_${me.y}`);

@@ -41,7 +41,7 @@ export default class GoPartnerReceiver extends Plan {
         if (message.type === 'go_partner') {
             let closestDelivery = findClosestDelivery([], me);
 
-            let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y]);
+            let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, true]);
             let path = getCells(actions);
 
             logDebug(4, "[GoPartner] Found path to closest: ", path)
@@ -75,7 +75,7 @@ export default class GoPartnerReceiver extends Plan {
             }
 
             // Find a path from me to the other agent
-            actions = await this.subIntention('find_path', [partnerLocation.x, partnerLocation.y]);
+            actions = await this.subIntention('find_path', [partnerLocation.x, partnerLocation.y, true]);
             path = getCells(actions);
 
             logDebug(4, "[GoPartner3] Path to partner: ", path)
