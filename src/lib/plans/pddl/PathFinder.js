@@ -32,7 +32,7 @@ export default class PathFinder extends Plan {
         /** Problem */
         const myBeliefset = new Beliefset();
 
-        let margin = 2;
+        let margin = 4;
         let filteredCells = validCells
             .filter(cell => isCellReachable(cell.x, cell.y))
             .filter(cell => {

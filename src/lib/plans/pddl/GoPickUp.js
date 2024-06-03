@@ -29,7 +29,7 @@ export default class GoPickUp extends Plan {
             try {
                 let response = await Promise.race([
                     client.ask(partner.id, JSON.stringify(question)),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
                 ])
 
                 if (response === 'no') {

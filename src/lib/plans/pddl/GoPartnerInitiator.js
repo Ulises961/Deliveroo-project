@@ -142,6 +142,7 @@ export default class GoPartnerInitiator extends Plan {
             .filter(cell => cell.x !== me.x || cell.y !== me.y)
             .filter(cell => isCellAdjacent(cell, me))
             .filter(cell => distance(cell, partner.position) > distance(me, partner.position))
+            .filter(cell => distance(cell, midPoint) > distance(me, midPoint))
         logDebug(4, 'Cell found: ', stepBackPos)
 
         // if (this.stopped)

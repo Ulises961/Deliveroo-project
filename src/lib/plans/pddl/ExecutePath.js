@@ -23,7 +23,7 @@ export default class ExecutePath extends Plan {
         }
 
         let retries = 0
-        const MAX_RETRIES = 3 // Max retries before re-computing path
+        const MAX_RETRIES = 2 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit

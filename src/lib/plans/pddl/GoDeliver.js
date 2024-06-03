@@ -64,7 +64,7 @@ export default class GoDeliver extends Plan {
         this.stopped = false;
         let closestDelivery = findClosestDelivery([], me);
         let retries = 0;
-        const MAX_RETRIES = 3;
+        const MAX_RETRIES = 2;
 
         const triedDeliveryPoints = [closestDelivery.point];
 
