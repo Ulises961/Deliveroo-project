@@ -1,6 +1,7 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
 import { me, parcels, updateMe, carryParcel, getAgentsMap, logDebug } from '../../utils/utils.js';
+import { agent } from '../../utils/agent.js';
 
 export default class ExecutePath extends Plan {
     constructor() {
@@ -22,14 +23,12 @@ export default class ExecutePath extends Plan {
         }
 
         let retries = 0
-        const MAX_RETRIES = 5 // Max retries before re-computing path
+        const MAX_RETRIES = 3 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {
             if (this.stopped)
                 throw ['stopped']; // if stopped then quit
 
             await new Promise(res => setImmediate(res));
-            if (me.x % 1 != 0 || me.y % 1 != 0)
-                await new Promise(res => client.onYou(res))
 
             let direction = path.shift();
             const moved = await client.move(direction);
@@ -37,11 +36,20 @@ export default class ExecutePath extends Plan {
             if (me.x % 1 != 0 || me.y % 1 != 0)
                 await new Promise(res => client.onYou(res))
 
+            if (me.x === target.x && me.y === target.y)
+                return true;
+
             // There are parcels in the current cell
             let parcelInCell = Array.from(parcels.values()).find(p => p.x === me.x && p.y === me.y)
             if (parcelInCell) {
-                await client.pickup();
-                carryParcel(parcelInCell);
+                let parcelsFound = await client.pickup();
+                if (parcelsFound.length > 0) {
+                    parcelsFound.forEach(parcelInfo => {
+                        carryParcel(parcelInfo);
+                        parcels.delete(parcelInfo.id);
+                        agent.changeIntentionScore('go_pick_up', [], -1, parcelInfo.id);
+                    });
+                }
             }
 
             // There is an agent in the target cell
@@ -52,7 +60,8 @@ export default class ExecutePath extends Plan {
             if (!moved) {
                 retries++;
                 // Re-compute path
-                path = await this.subIntention('find_path', [target.x, target.y]);
+                let actions = await this.subIntention('find_path', [target.x, target.y])
+                path = actions.map(p => p.action.toLowerCase());
             }
         }
 

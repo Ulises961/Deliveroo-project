@@ -32,7 +32,8 @@ export default class RandomMove extends Plan {
             return true;
         })
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        if (this.stopped) 
+            return false; // if stopped then quit
         if (validDestinations.length === 0) {
             // I'm in the only parcel spawner? Stay here
             while (!this.stopped) {
@@ -54,7 +55,8 @@ export default class RandomMove extends Plan {
             throw ['no path found'];
         }
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        if (this.stopped) 
+            return false; // if stopped then quit
 
         const complete = await this.subIntention('execute_path', [path, destination]);
         if (complete) {
