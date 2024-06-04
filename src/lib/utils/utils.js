@@ -189,7 +189,7 @@ const updateAgentsMap = async function updateAgentsMap() {
 };
 
 const partner = { id: null, name: null, position: null };
-const GROUP = ['ulises', 'lorenzo'];
+const GROUP = ['Fuss_1', 'Fuss_2'];
 
 const DEBUG = process.env.DEBUG === 'true' || false;
 const DEBUG_LEVEL = process.env.DEBUG_LEVEL || 0;
