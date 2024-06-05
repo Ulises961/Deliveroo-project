@@ -162,7 +162,7 @@ export default class GoPartnerInitiator extends Plan {
             direction = 'down'
         else if (stepBackPos[0].y > me.y)
             direction = 'up'
-        pathCompleted = await this.subIntention('execute_path', [[{action: direction}], stepBackPos[0]]);
+        pathCompleted = await this.subIntention('execute_path', [[{x:stepBackPos[0].x, y:stepBackPos[0].y, action: direction}], stepBackPos[0]]);
 
         // if (this.stopped)
         //     return false;

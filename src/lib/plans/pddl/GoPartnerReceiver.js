@@ -235,7 +235,7 @@ export default class GoPartnerReceiver extends Plan {
         else if (me.y < partnerLocation.y)
             direction = 'down'
 
-        pathCompleted = await this.subIntention('execute_path', [[{action: direction }], partnerLocation]);
+        pathCompleted = await this.subIntention('execute_path', [[{x:partnerLocation.x, y: partnerLocation.y, action: direction }], partnerLocation]);
 
         logDebug(4, 'Path completed!')
 

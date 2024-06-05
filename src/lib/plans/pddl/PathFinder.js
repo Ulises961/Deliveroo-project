@@ -3,6 +3,8 @@ import PddlProblem from "./PddlProblem.js";
 import { partner, map, me, parcels, validCells, getAgentsMap, isCellReachable, logDebug} from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';
+import AStar from "../other/AStar.js";
+import { log } from "console";
 
 export default class PathFinder extends Plan {
     constructor() {
@@ -31,18 +33,19 @@ export default class PathFinder extends Plan {
 
         /** Problem */
         const myBeliefset = new Beliefset();
-
-        let margin = 4;
-        let filteredCells = validCells
-            .filter(cell => isCellReachable(cell.x, cell.y))
-            .filter(cell => {
+        // const aStar = new AStar();
+        // let filteredCells = await aStar.execute(x,y,skipPartner);
+        // if(filteredCells.length === 0) {
+            let margin = 3;
+           let filteredCells = validCells.filter(cell => {
                 return (cell.x >= Math.min(me.x, x) - margin && cell.x <= Math.max(me.x, x) + margin) &&
                     (cell.y >= Math.min(me.y, y) - margin && cell.y <= Math.max(me.y, y) + margin);
             });
+        // }
+        // logDebug(3, 'PathFinder: filteredCells', filteredCells);
 
         filteredCells
             .forEach(tile => {
-                myBeliefset.declare(`tile t${tile.x}_${tile.y}`);
                 if (tile.delivery)
                     myBeliefset.declare('delivery t' + x + '_' + y);
                 let right = tile.x < map.length - 1 && !map[tile.x + 1][tile.y].fakeFloor && !this.isAgentInCell(tile.x + 1, tile.y) ? map[tile.x + 1][tile.y] : null;
@@ -96,10 +99,10 @@ export default class PathFinder extends Plan {
         pddlProblem.goals = `at me t${x}_${y}`;
         let problem = pddlProblem.toPddlString();
         let plan = await onlineSolver(domain, problem);
+
         if (!plan) {
             return [];
         }
-
         return plan;
     }
 

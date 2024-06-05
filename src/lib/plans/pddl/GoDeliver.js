@@ -31,6 +31,9 @@ export default class GoDeliver extends Plan {
      */
     minWidthInPathIsOne(path) {
         let isWidthOne = false;
+        if (path.length <= 1) {
+            return true;
+        }
         for (let i = 0; i < path.length - 1; i++) {
             // Current cell and next cell in the path
             let x = path[i].x;
@@ -119,7 +122,7 @@ export default class GoDeliver extends Plan {
 
         closestDelivery = findClosestDelivery([], me);
 
-        let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, true]);
+        let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, false]);
 
         let path = getCells(actions);
         path.push({ x: me.x, y: me.y })

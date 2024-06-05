@@ -1,6 +1,7 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
 import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap } from '../../utils/utils.js';
+import { agent } from '../../utils/agent.js';
 
 export default class FollowPath extends Plan {
     constructor() {

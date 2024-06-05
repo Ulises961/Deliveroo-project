@@ -202,8 +202,15 @@ const logDebug = function logDebug(level, ...args) {
 
 const getCells = function getCells(path) {
     return path.map(p => {
-        const planArgs = p.args;
-        return { x: planArgs[2][1], y: planArgs[2][3], action: p.action };
+        if(p.args) {
+            let planArgs = p.args;
+            planArgs = planArgs[2].split('_');
+            let x = parseInt(planArgs[0].substring(1));
+            let y = parseInt(planArgs[1]); 
+            return { x: x, y: y};
+        } else {
+            return p;
+        }
 
     });
 }
