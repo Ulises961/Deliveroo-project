@@ -26,7 +26,7 @@ export default class ExecutePath extends Plan {
         const MAX_RETRIES = 2 // Max retries before re-computing path
         while (path.length > 0 && retries < MAX_RETRIES) {
             if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+                return false; // if stopped then quit
 
             await new Promise(res => setImmediate(res));
 
@@ -53,9 +53,9 @@ export default class ExecutePath extends Plan {
             }
 
             // There is an agent in the target cell
-            if (getAgentsMap().find(agent => target.x === agent.x && target.y === agent.y)) {
-                return false
-            }
+            // if (getAgentsMap().find(agent => target.x === agent.x && target.y === agent.y)) {
+            //     return false
+            // }
 
             if (!moved) {
                 retries++;

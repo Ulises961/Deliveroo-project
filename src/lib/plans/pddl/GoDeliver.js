@@ -73,8 +73,8 @@ export default class GoDeliver extends Plan {
 
         while (!this.stopped && retries < MAX_RETRIES) {
             logDebug(0, 'GoDeliver.execute: predicate ', me, ' closestDelivery ', closestDelivery);
-            if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+            // if (this.stopped)
+            //     throw ['stopped']; // if stopped then quit
 
             if (!closestDelivery || !closestDelivery.point) {
                 retries++;
@@ -83,8 +83,8 @@ export default class GoDeliver extends Plan {
 
             let path = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y]);
 
-            if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+            // if (this.stopped)
+            //     throw ['stopped']; // if stopped then quit
 
             if (!path || path.length === 0) {
                 retries++;
@@ -96,8 +96,8 @@ export default class GoDeliver extends Plan {
 
             let promise = new Promise(res => client.onYou(res)) // Wait for the client to update the agent's position
 
-            if (this.stopped)
-                throw ['stopped']; // if stopped then quit
+            // if (this.stopped)
+            //     throw ['stopped']; // if stopped then quit
             let path_completed = await this.subIntention('execute_path', [path, closestDelivery.point]);
 
             if (path_completed) {

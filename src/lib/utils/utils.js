@@ -29,6 +29,7 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
 const findClosestDelivery = function findClosestDelivery(exceptions = [], startingPoint) {
     let closestDelivery = { point: null, distance: Infinity };
     deliveryPoints
+        .filter(cell => isCellReachable(cell.x, cell.y))
         .filter(deliveryPoint => {
             return !exceptions.some(exception => deliveryPoint.x === exception?.x && deliveryPoint.y === exception?.y);
         }) // Filter out the exceptions
@@ -189,7 +190,7 @@ const updateAgentsMap = async function updateAgentsMap() {
 };
 
 const partner = { id: null, name: null, position: null };
-const GROUP = ['Fuss_1', 'Fuss_2'];
+const GROUP = ['lorenzo', 'ulises'];
 
 const DEBUG = process.env.DEBUG === 'true' || false;
 const DEBUG_LEVEL = process.env.DEBUG_LEVEL || 0;
