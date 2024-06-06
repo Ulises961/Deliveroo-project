@@ -1,10 +1,10 @@
 import { onlineSolver, Beliefset } from "@unitn-asa/pddl-client";
 import PddlProblem from "./PddlProblem.js";
-import { partner, map, me, parcels, validCells, getAgentsMap, isCellReachable, logDebug} from "../../utils/utils.js";
+import { partner, map, me, parcels, validCells, getAgentsMap, isCellReachable, logDebug, usedPaths, updateMe} from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';
-import AStar from "../other/AStar.js";
 import { log } from "console";
+
 
 export default class PathFinder extends Plan {
     constructor() {
@@ -30,10 +30,18 @@ export default class PathFinder extends Plan {
     async execute(x, y, skipPartner) {
         let domain = await this.readFile('./lib/plans/pddl/domain-path-find.pddl');
 
+        if(me.x %1 != 0 || me.y %1 != 0) {
+            await updateMe();
+        }
 
+        if(usedPaths.has(`${me.x} ${me.y} ${x} ${y}`)) {
+            const path = usedPaths.get(`${me.x} ${me.y} ${x} ${y}`);
+            logDebug(3, 'PathFinder: Reusing path', path, 'key', JSON.stringify([me.x, me.y, x, y]));
+            return path;
+        }
         /** Problem */
         const myBeliefset = new Beliefset();
-        let margin = 5;
+
         let filteredCells = validCells
             .filter(cell => !cell.fakeFloor)
             .filter(cell => isCellReachable(cell.x, cell.y))
@@ -99,6 +107,8 @@ export default class PathFinder extends Plan {
         if (!plan) {
             return [];
         }
+
+        usedPaths.set(`${me.x} ${me.y} ${x} ${y}`, plan);
         return plan;
     }
 

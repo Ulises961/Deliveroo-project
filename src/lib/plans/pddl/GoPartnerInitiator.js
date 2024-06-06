@@ -47,6 +47,7 @@ export default class GoPartnerInitiator extends Plan {
             // The partner is ready to meet at the mid point
             let midPoint = message.midPoint;
             let direction = null;
+            let freeCell = null;
             let moved = false;
             let parcelsDown = false;
             if (!midPoint)
