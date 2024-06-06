@@ -5,6 +5,8 @@ import { agent } from '../../utils/agent.js';
 import { blacklist } from '../AgentLoop.js'
 import { isCellAdjacent, goToMidPoint, askResponse, takeStepBack, getDirection } from './GoPartnerUtils.js';
 
+let requestInProgress = false;
+
 export default class GoPartnerReceiver extends Plan {
     // Variable used to know in the listener if the agent has finished the go_partner plan
     goPartnerDone = false;
@@ -32,8 +34,14 @@ export default class GoPartnerReceiver extends Plan {
         if (!messageTypes.includes(message.type))
             return;
 
+        if (requestInProgress) {
+            reply(JSON.stringify({ success: false, position: me }));
+            return false;
+        }
+
         // The message is to coordinate on the delivery
         if (message.type === 'go_partner') {
+            requestInProgress = true;
             let closestDelivery = findClosestDelivery([], me);
 
             let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, true]);
@@ -42,12 +50,13 @@ export default class GoPartnerReceiver extends Plan {
             logDebug(4, "[GoPartner] Found path to closest: ", path)
 
             // If there is no path to the delivery, failure!
-            if (!path || path.length == 0) {
+            if (!actions || actions.length == 0) {
                 reply(JSON.stringify({
                     type: 'go_partner_response',
                     success: false,
                     position: me
                 }))
+                requestInProgress = false;
                 return false;
             }
 
@@ -58,14 +67,10 @@ export default class GoPartnerReceiver extends Plan {
                 logDebug(4, "[GoPartner2] I'm already beside the partner")
                 let previousPosition = { x: me.x, y: me.y };
                 let stepBack = await takeStepBack(this, partnerLocation);
-                if (!stepBack) {
-                    reply(JSON.stringify({ success: false, position: me }));
-                    return false;
-                }
-                midPoint = previousPosition;
-                if (midPoint.x == me.x && midPoint.y == me.y) {
+                if (!stepBack)
                     midPoint = partnerLocation;
-                }
+                else
+                    midPoint = previousPosition;
             } else {
                 // Find a path from me to the other agent
                 let retries = 0;
@@ -77,6 +82,7 @@ export default class GoPartnerReceiver extends Plan {
                 if (actions.length == 0) {
                     logDebug(4, "[GoPartner2] Could not find path to partner!")
                     reply(JSON.stringify({ success: false, position: me }));
+                    requestInProgress = false;
                     return false;
                 }
 
@@ -89,11 +95,27 @@ export default class GoPartnerReceiver extends Plan {
             }
 
             let response = await client.ask(partner.id, JSON.stringify({ type: 'go_partner_ready', position: me, midPoint: midPoint }))
+            response = JSON.parse(response);
 
-            if (!midPoint)
+            if (!response.success) {
                 reply(JSON.stringify({ success: false, position: me }));
+                requestInProgress = false;
+                return false;
+            }
+
+            if (!midPoint) {
+                reply(JSON.stringify({ success: false, position: me }));
+                requestInProgress = false;
+                return false;
+            }
             let direction = getDirection(me, midPoint);
             let moved = await client.move(direction)
+
+            if (!moved) {
+                reply(JSON.stringify({ success: false, position: me }));
+                requestInProgress = false;
+                return false;
+            }
 
             let pickup = await client.pickup();
             logDebug(4, 'Parcel picked up!', pickup)
@@ -105,6 +127,7 @@ export default class GoPartnerReceiver extends Plan {
                 position: me,
                 success: true
             }))
+            requestInProgress = false;
         } else if (message.type == 'go_partner_abort') {
             // The partner has aborted the plan
             agent.changeIntentionScore('go_partner', [message.position], -1, 'go_partner');
