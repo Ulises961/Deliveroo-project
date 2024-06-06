@@ -216,6 +216,7 @@ const getCells = function getCells(path) {
     });
 }
 
+const usedPaths = new Map();
 export {
     distance,
     updateMe,
@@ -239,5 +240,6 @@ export {
     getAgentsMap,
     isCellReachable,
     logDebug,
-    getCells
+    getCells,
+    usedPaths
 };
