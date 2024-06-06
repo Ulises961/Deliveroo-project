@@ -7,18 +7,11 @@ import { isCellAdjacent, goToMidPoint, askResponse, takeStepBack, getDirection }
 
 export default class GoPartnerReceiver extends Plan {
     // Variable used to know in the listener if the agent has finished the go_partner plan
-    amAtMidPoint = false;
     goPartnerDone = false;
-    planInstance = this;
-    isRequestInProcess = false;
-    partnerLocation = null;
-    isPartnerInPos = false;
 
     constructor() {
         super('go_partner_receiver');
         client.socket.on('msg', this.onMsg.bind(this));
-        this.amAtMidPoint = false;
-        this.goPartnerDone = false;
     }
 
     async onMsg(id, name, messageString, reply) {
@@ -34,7 +27,7 @@ export default class GoPartnerReceiver extends Plan {
         }
 
         // The message types that are accepted by this listener
-        let messageTypes = ['go_partner', 'go_partner_abort', 'go_partner_ready', 'go_partner_done'];
+        let messageTypes = ['go_partner', 'go_partner_abort'];
 
         if (!messageTypes.includes(message.type))
             return;
@@ -50,7 +43,6 @@ export default class GoPartnerReceiver extends Plan {
 
             // If there is no path to the delivery, failure!
             if (!path || path.length == 0) {
-                this.isRequestInProcess = true;
                 reply(JSON.stringify({
                     type: 'go_partner_response',
                     success: false,
@@ -65,7 +57,11 @@ export default class GoPartnerReceiver extends Plan {
             if (isCellAdjacent(me, partnerLocation)) {
                 logDebug(4, "[GoPartner2] I'm already beside the partner")
                 let previousPosition = { x: me.x, y: me.y };
-                await takeStepBack(this, partnerLocation);
+                let stepBack = await takeStepBack(this, partnerLocation);
+                if (!stepBack) {
+                    reply(JSON.stringify({ success: false, position: me }));
+                    return false;
+                }
                 midPoint = previousPosition;
                 if (midPoint.x == me.x && midPoint.y == me.y) {
                     midPoint = partnerLocation;

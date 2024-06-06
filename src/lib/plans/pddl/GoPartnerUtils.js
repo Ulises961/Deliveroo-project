@@ -31,9 +31,14 @@ export async function takeStepBack(planInstance, midPoint) {
         .filter(cell => !cell.fakeFloor)
         .filter(cell => cell.x !== me.x || cell.y !== me.y)
         .filter(cell => isCellAdjacent(cell, me))
-        .filter(cell => !partner.positionY || distance(cell, partner.position) > distance(me, partner.position))
+        .filter(cell => !partner.position || distance(cell, partner.position) > distance(me, partner.position))
         .filter(cell => distance(cell, midPoint) > distance(me, midPoint))
     logDebug(4, 'Cell found: ', stepBackPos)
+
+    if (stepBackPos.length === 0) {
+        logDebug(2, 'No cell found to step back!')
+        return false;
+    }
 
     // Go back one step
     let direction = 'right'
@@ -44,7 +49,7 @@ export async function takeStepBack(planInstance, midPoint) {
     else if (stepBackPos[0].y > me.y)
         direction = 'up'
     // await planInstance.subIntention('execute_path', [[{action: direction}], stepBackPos[0]]);
-    await client.move(direction)
+    return await client.move(direction)
 }
 
 /**

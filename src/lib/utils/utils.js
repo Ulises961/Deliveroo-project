@@ -66,6 +66,12 @@ const MAX_NUM_MOVEMENT_RETRIES = 5;
 const updateMe = async function updateMe() {
     return await new Promise(res => {
         client.onYou(({ id, name, x, y, score }) => {
+
+            me.id = id
+            me.name = name
+            me.x = x
+            me.y = y
+            me.score = score
             /**
              * First time the agent receives the position
              */
@@ -108,12 +114,6 @@ const updateMe = async function updateMe() {
                 validCells.length = 0;
                 validCells.push(...newValidCells)
             }
-
-            me.id = id
-            me.name = name
-            me.x = x
-            me.y = y
-            me.score = score
             res(me);
         });
     })

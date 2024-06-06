@@ -8,14 +8,10 @@ import { getDirection, getOppositeCell } from './GoPartnerUtils.js';
 
 export default class GoPartnerInitiator extends Plan {
     // Variable used to know in the listener if the agent has finished the go_partner plan
-    amAtMidPoint = false;
-    goPartnerProceed = false;
 
     constructor() {
         super('go_partner_initiator');
         client.socket.on('msg', this.onMsg.bind(this));
-        this.amAtMidPoint = false;
-        this.goPartnerProceed = false;
     }
 
     async onMsg(id, name, messageString, reply) {
@@ -49,6 +45,7 @@ export default class GoPartnerInitiator extends Plan {
             let direction = null;
             let moved = false;
             let parcelsDown = false;
+            let freeCell = null;
             if (!midPoint)
                 reply(JSON.stringify({ success: false, position: me }));
             if (midPoint.x != me.x || midPoint.y != me.y) {
