@@ -28,8 +28,10 @@ client.onMap((w, h, newMap) => {
         map[tile.x][tile.y] = tile
         map[tile.x][tile.y].fakeFloor = false
 
+        // The valid cells are the ones that are not walls
         validCells.push(tile)
 
+        // Also a list of delivery cells for convenience
         if (tile.delivery) {
             deliveryPoints.push({ x: tile.x, y: tile.y })
         }
@@ -56,26 +58,27 @@ client.onConfig(config => {
  * Perceive the agents near us, and update the agents array with the new information
  * The old data is erased
  */
-
 updateAgentsMap();
 
 // Update the agent's information necessary to communicate with the partner
 await updateMe();
 
-const partnerName = GROUP[0] === client.name ? GROUP[1] : GROUP[0];
+if(GROUP.includes(client.name)) {
+    const partnerName = GROUP[0] === client.name ? GROUP[1] : GROUP[0];
+    // Both partners shout their names to each other only one hears the other. Then they communicate privately their ids
+    askPartnerId(partnerName);
+    
+    // Handshake with the partner
+    client.onMsg((id, name, msg) => {
+        if (name === partnerName && partner.id === null) {
+            partner.id = id;
+            partner.name = name;
+            passOwnId(id);
+            logDebug(2, `Received message from ${name} with id ${id}: ${msg}, partner id: ${partner.id}, partner name: ${partner.name}`);
+        }
+    });
+}
 
-// Both partners shout their names to each other only one hears the other. Then they communicate privately their ids
-askPartnerId(partnerName);
-
-// Handshake with the partner
-client.onMsg((id, name, msg) => {
-    if (name === partnerName && partner.id === null) {
-        partner.id = id;
-        partner.name = name;
-        passOwnId(id);
-        logDebug(2, `Received message from ${name} with id ${id}: ${msg}, partner id: ${partner.id}, partner name: ${partner.name}`);
-    }
-});
 
 
 /**

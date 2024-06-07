@@ -1,13 +1,25 @@
-import { parcels, distance, me, configs, carriedParcels, findClosestDelivery, decayIntervals, getAgentsMap, isCellReachable, partner, logDebug, agentsMap } from '../utils/utils.js';
 import { agent } from '../utils/agent.js';
 import client from '../utils/client.js';
+import { agentsMap, carriedParcels, configs, decayIntervals, distance, findClosestDelivery, getAgentsMap, isCellReachable, logDebug, me, parcels, partner } from '../utils/utils.js';
 
+/**
+ * The interval that updates the score of the parcels, each clock tick
+ */
 let parcelScoreInterval = null;
+
+/**
+ * The interval that updates the score of the carried parcels, each clock tick
+ */
 export let carriedParcelsScoreInterval = null;
+
 /**
  * List of parcels that have been "booked" by the other agent, do not consider them in the decision making
  */
 export let blacklist = []
+
+/**
+ * List of parcels that have been shared with the other agent, so that they are not shared again
+ */
 let sharedParcels = []
 
 /**
@@ -17,6 +29,8 @@ export function parcelsLoop(new_parcels) {
     /**
      * Update the score of the parcels, if the score reaches 0, delete it from the map.
      * Update the reward for the intention as well.
+     * We chose to use an interval instead of relying on the agent loop, because the agent loop is not guaranteed to run every clock tick. The interval is not dependent on the server.
+     * The interval is initialized on the first call of the function
      */
     if (!parcelScoreInterval) {
         parcelScoreInterval = setInterval(() => {
@@ -26,12 +40,16 @@ export function parcelsLoop(new_parcels) {
                     return;
                 }
 
-                let msPassed = Date.now() - parcel.discovery // Milliseconds passed since the parcel was discovered
-                let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; // Convert to seconds
-                // The new reward is the old reward minus the number of seconds passed divided by the decay interval. This is because if the decay is 2 seconds and 6 seconds have passed, the new reward should be oldReward - (6 / 2) = oldReward - 3
+                let msPassed = Date.now() - parcel.discovery /** Milliseconds passed since the parcel was discovered */
+                let decay = decayIntervals[configs.PARCEL_DECADING_INTERVAL]; /** Convert to seconds */
+
+                /** The new reward is the old reward minus the number of seconds passed divided by the decay interval. 
+                 * This is because if the decay is 2 seconds and 6 seconds have passed, 
+                 * the new reward should be oldReward - (6 / 2) = oldReward - 3 */
                 let decayedReward = Math.floor(parcel.originalReward - (msPassed / decay))
 
                 parcel.reward = decayedReward
+                // Delete the parcel if the reward is 0 or lower
                 if (parcel.reward <= 0)
                     parcels.delete(parcel.id)
                 updateIntentionScore(parcel, computeParcelScore(parcel), parcel.id)
@@ -41,7 +59,7 @@ export function parcelsLoop(new_parcels) {
 
     if (!carriedParcelsScoreInterval) {
         /**
-         * Update the score of the carried parcels
+         * Update the score of the carried parcels, every clock tick
          */
         carriedParcelsScoreInterval = setInterval(async () => {
             updateCarriedParcelsScore()
@@ -49,7 +67,7 @@ export function parcelsLoop(new_parcels) {
     }
 
     /**
-    * If there are no new parcels, stop reconsidering
+    * Remove parcels that are in the map, but not in the observation range (if the position of the parcel can be reached by the observation range, from the current position)
     */
     removeOldParcels(new_parcels)
 
@@ -59,7 +77,7 @@ export function parcelsLoop(new_parcels) {
     addNewParcels(new_parcels)
 
     /**
-     * Choose the best option, which can be a parcel, the delivery, or a random walk
+     * Add the parcels to the intention queue, so that the agent can choose the best option
      */
     chooseBestOption()
 
@@ -77,7 +95,7 @@ function updateIntentionScore(parcel, newScore, id) {
 }
 
 /**
- * Remove parcels that are in observation range, are in the map but are not in the new_parcels list 
+ * Remove parcels that are in the map, should be seen from the current position, based on the observation range, but they are not there anymore
  * (so they disappeared, or they have been taken)
  */
 async function removeOldParcels(new_parcels) {
@@ -86,7 +104,7 @@ async function removeOldParcels(new_parcels) {
     for (const parcel of oldParcels) {
         if (carriedParcels.find(p => p.id === parcel.id)) {
             parcels.delete(parcel.id)
-            continue; // Skip carried parcels (they are not in the map anymore
+            continue; // Skip carried parcels (they are not in the map anymore)
         }
         // If the parcel is in the observation range
         if (distance(parcel, me) < configs.PARCELS_OBSERVATION_DISTANCE) {
@@ -102,6 +120,7 @@ async function removeOldParcels(new_parcels) {
                     updateIntentionScore(parcel, -1, parcel.id) // Drop the intention
                     continue;
                 }
+                // Add discovery time, original reward, and update the parcel score in the intention queue
                 newParcel.discovery = Date.now()
                 newParcel.originalReward = newParcel.reward
                 parcels.set(parcel.id, newParcel)
@@ -116,7 +135,7 @@ async function removeOldParcels(new_parcels) {
  */
 function addNewParcels(new_parcels) {
     new_parcels = new_parcels.filter(parcel => !blacklist.includes(parcel.id) && !parcels.has(parcel.id) && !parcel.carriedBy && isCellReachable(parcel.x, parcel.y))
-  
+
     for (const parcel of new_parcels) {
         parcel.discovery = Date.now()
         parcel.originalReward = parcel.reward
@@ -124,10 +143,10 @@ function addNewParcels(new_parcels) {
     }
 }
 
+/**
+ * Add all the (obtainable) parcels to the intention queue, so that the agent can choose the best option
+ */
 function chooseBestOption() {
-    /**
-    * Options generation
-    */
     const options = new Map();
     for (const [id, parcel] of parcels.entries()) {
         if (!parcel.carriedBy && !blacklist.includes(id)) {
@@ -145,16 +164,15 @@ function chooseBestOption() {
             agent.push({ desire: parcel.desire, args: parcel.args, score: parcel.score, id: parcel.id })
         }
     }
+    // If no parcel is available, go to a random spot
     if (options.size == 0) {
         agent.push({ desire: 'go_random', args: [], score: 1, id: 'go_random' })
     }
 }
 
-function parcelHasAgentCloser(parcel) {
-    let agents = getAgentsMap();
-    return agents.some(agent => distance(agent, parcel) < distance(me, parcel));
-}
-
+/**
+ * Compute the sum of the carried parcels, based on the decay interval and the time they were picked up
+ */
 function sumCarriedParcels() {
     return carriedParcels
         .reduce((previous, current, index) => {
@@ -190,8 +208,7 @@ export function getDeliveryScore() {
 
 
 /**
- * futureDeliveryReward = [Sum of carried] - ([distance from delivery] * [decay] * [number of parcels])
- * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
+ * Assign a score to the delivery point, based on the distance to the delivery and the decay of the carried parcels
  */
 function computeDeliveryScore(sumScore, carriedParcels) {
     if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
@@ -203,13 +220,14 @@ function computeDeliveryScore(sumScore, carriedParcels) {
 }
 
 /**
- * futureDeliveryReward = [Sum of carried] - ([distance from delivery] * [decay] * [number of parcels])
- * pickupAndDeliver = ( [sum of carried] + [best parcel]) - ([distance from best] * [number of parcels] * [decay] + [distance from best to delivery] * [num of carried + 1] * [decay])
+ * Compute the score of the parcel, based on the distance to the parcel, 
+ * the decay of the parcels carried, and the distance to the delivery
  */
 export function computeParcelScore(parcel) {
-    // In case the decay interval is infinite, just the reward for picking up the parcel, plus the reward from the carried parcels, and a little bit of cost for the distance, to prioritize the closest parcels.
-    // 1 / distance: The closer the parcel, the higher the score
-    // 1 - (1 / distance): The closer the parcel, the lower the score subtracted from the reward
+    /** In case the decay interval is infinite, prioritize the closest parcels.
+     * 1 / distance: The closer the parcel, the higher the score
+     * 1 - (1 / distance): The closer the parcel, the lower the score subtracted from the reward
+    */
     if (configs.PARCEL_DECADING_INTERVAL == 'infinite')
         return parcel.reward + sumCarriedParcels() - (1 - (1 / Math.max(distance(me, parcel), 1)));
 
@@ -221,8 +239,10 @@ export function computeParcelScore(parcel) {
 
     let sumOfCarried = sumCarriedParcels();
 
-    // Reward from the carried parcels + the reward from the parcel - the distance to the parcel, considering the decay of the parcels carried and the distance from the parcel to the delivery.
-    // Basically, it finds the theoretical reward that is achieved by picking up the parcel and delivering it, considering the decay of the parcels carried and the distance to the delivery.
+    /** Basically, it finds the theoretical reward that is achieved
+     *  by picking up the parcel and delivering it, considering the 
+     * decay of the parcels carried and the distance to the delivery. 
+     */
     let futureSumOnParcelSpot = sumOfCarried - distanceToParcel * decayRate * carriedParcels.length
     let futureRewardOnDeliery = futureSumOnParcelSpot + parcel.reward - distanceParcelToDelivery * (carriedParcels.length + 1) * decayRate;
 
@@ -230,10 +250,11 @@ export function computeParcelScore(parcel) {
 }
 
 /**
- * Send the parcels to the other agent, so that they can be coordinated
+ * Send the parcels information to the other agent,
+ * so that they can be coordinated
  */
 function sendMemory() {
-    // The partner doesn't exists
+    // The partner doesn't exist
     if (!partner.id)
         return;
 
@@ -276,16 +297,13 @@ client.onMsg((id, name, msg, reply) => {
     if (!message)
         return;
 
-    // All messages contain the position of the partner
     partner.position = message.position;
 
+    //Add the new parcels to the map 
     if (message.type === 'parcels') {
-        /**
-         * Add the new parcels to the map
-         */
         let new_parcels = message.parcels
         new_parcels.forEach(parcel => {
-            parcel.shared = true; // The parcel was shared by the partner
+            parcel.shared = true;
         })
         addNewParcels(new_parcels)
 
@@ -295,25 +313,23 @@ client.onMsg((id, name, msg, reply) => {
                 agentsMap.set(agent.id, agent);
             })
         }
+                
+        // Remove the parcel from the map if the other agent is picking it up
     } else if (message.type === 'pick_up') {
-        /**
-         * Remove the parcel from the map if the other agent is picking it up
-         */
 
         let otherAgentDistance = distance(message.position, message.parcel);
         let thisAgentDistance = distance(me, message.parcel);
 
-        let pickup = (thisAgentDistance > otherAgentDistance || // The other agent is closer
-            (Math.floor(agent.intention_queue[0].score) >= Math.floor(computeParcelScore(message.parcel)) &&
-                agent.intention_queue[0].id !== message.parcel.id));
-
         logDebug(3, 'Received pick up message; this agent distance', thisAgentDistance, 'other agent distance', otherAgentDistance, 'theorical score', computeParcelScore(message.parcel), 'current intention score:', agent.intention_queue[0].score, 'isCurrentIntention:', agent.intention_queue[0].id === message.parcel.id, 'pick up:', thisAgentDistance > otherAgentDistance);
 
-        // If the other agent is closer, or the score of the parcel is lower than the score of the current intention, let the other agent pick it up
-        // Also, if the cell is not reachable, let the other have it
-        if (thisAgentDistance > otherAgentDistance || 
-                !isCellReachable(message.parcel.x, message.parcel.y)) {
-            // The current intention is better
+        /** 
+         * If the other agent is closer, or the score of the parcel 
+         * is lower than the score of the current intention, or the 
+         * cell is not reachable, let the other have it 
+         * */
+        if (thisAgentDistance > otherAgentDistance ||
+            !isCellReachable(message.parcel.x, message.parcel.y)) {
+
             let parcelId = message.parcel.id
             blacklist.push(parcelId)
             updateIntentionScore(null, -1, parcelId)

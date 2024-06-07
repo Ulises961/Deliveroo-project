@@ -1,8 +1,8 @@
-import Plan from '../Plan.js';
-import client from '../../utils/client.js';
-import { distance, me, deliveryPoints, parcels, carryParcel, logDebug, partner, updateMe } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
-import { updateCarriedParcelsScore, computeParcelScore, blacklist } from '../AgentLoop.js';
+import client from '../../utils/client.js';
+import { carryParcel, distance, logDebug, me, parcels, partner, updateMe } from '../../utils/utils.js';
+import { blacklist, updateCarriedParcelsScore } from '../AgentLoop.js';
+import Plan from '../Plan.js';
 
 export default class GoPickUp extends Plan {
 
@@ -44,15 +44,17 @@ export default class GoPickUp extends Plan {
         }
 
         if (predicate.x !== me.x || predicate.y !== me.y) {
-
+            // Find path to the parcel
             let path = await this.subIntention('find_path', [predicate.x, predicate.y]);
             logDebug(0, 'GoPickUp.execute: path ', path);
 
+            // No path found, mark intention for deletion
             if (path.length === 0) {
                 agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
-
                 throw ['No path found'];
             }
+            
+                // Execute the path and pick up the parcel
             let target = { x: predicate.x, y: predicate.y };
             await this.subIntention('execute_path', [path, target]);
         }
@@ -62,6 +64,7 @@ export default class GoPickUp extends Plan {
 
         let pickup = await client.pickup();
 
+        // For each parcel picked up, carry it and mark the intention for deletion
         if (pickup.length > 0) {
             pickup.forEach(parcelInfo => {
                 let parcelId = parcelInfo.id

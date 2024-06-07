@@ -10,17 +10,24 @@ export default class RandomMove extends Plan {
     isApplicableTo(go_random) {
         return go_random == 'go_random';
     }
-
-    async execute(predicate) {
+    /**
+     * Find a random destination and move to it
+     * @returns true if the agent has reached the destination
+     */
+    async execute() {
         this.stopped = false;
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        if (this.stopped){
+            logDebug(3, 'RandomMove: stopped')
+            throw ['stopped']; 
+        } 
+        
         /**
-         * Choose a cell that is outside the observation range, but not too far away
+         * Choose a cell that is outside the observation range
+         * but not too far away
          */
         const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE * 2;
-        // const MIN_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE;
-        await new Promise(res => setImmediate(res));
+
         if (me.x % 1 != 0 || me.y % 1 != 0)
             await updateMe();
         
@@ -32,16 +39,17 @@ export default class RandomMove extends Plan {
             return true;
         })
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        if (this.stopped) throw ['stopped']; 
         if (validDestinations.length === 0) {
             // I'm in the only parcel spawner? Stay here
             return;
         }
         
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        if (this.stopped) throw ['stopped']; 
 
         let index = Math.floor(Math.random() * validDestinations.length);
         let destination = validDestinations[index];
+        
         if (!destination) {
             throw ['no destination found'];
         }
@@ -57,9 +65,10 @@ export default class RandomMove extends Plan {
             throw ['no path found'];
         }
 
-        if (this.stopped) throw ['stopped']; // if stopped then quit
+        if (this.stopped) throw ['stopped']; 
 
         const complete = await this.subIntention('follow_path', [path]);
+
         if (complete) {
             return true;
         } else {

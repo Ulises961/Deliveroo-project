@@ -26,6 +26,12 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
+/**
+ * Finds the closest delivery point to a given starting point.
+ * @param {Array} exceptions The points to exclude from the search.
+ * @param {Object} startingPoint The point from which to start the search.
+ * @returns {Object} The closest delivery point.
+ */
 const findClosestDelivery = function findClosestDelivery(exceptions = [], startingPoint) {
     let closestDelivery = { point: null, distance: Infinity };
     deliveryPoints
@@ -63,6 +69,11 @@ const deliveryPoints = map.filter(cell => cell.delivery);
 const plans = [];
 const MAX_NUM_MOVEMENT_RETRIES = 5;
 
+/**
+ * Update the agent's position.
+ * Additionally, the first time the event is called, it calculates the reachable cells, so the cells that can be reached from the current position.
+ * Certain maps include cells that are surrounded by walls, and are not reachable in any way. We need to exclude those cells from our consideration.
+ */
 const updateMe = async function updateMe() {
     return await new Promise(res => {
         client.onYou(({ id, name, x, y, score }) => {
@@ -132,6 +143,11 @@ const configs = {
  */
 const carriedParcels = [];
 
+/**
+ * Method called when an agent picks up a parcel. It adds the parcel
+ * to the carriedParcels array and removes it from the parcels array.
+ * The carriedParcels array is used to compute the score for a delivery
+ */
 const carryParcel = (parcel) => {
     if (!parcel)
         return;
@@ -140,7 +156,6 @@ const carryParcel = (parcel) => {
         return;
     }
     carriedParcels.push({ id: parcel.id, reward: parcel.reward, pickupTime: Date.now() });
-    parcels.delete(parcel.id);
 }
 
 const decayIntervals = { '1s': 1000, '2s': 2000, '5s': 5000, '10s': 10000 };
@@ -177,10 +192,14 @@ const getAgentsMap = () => {
         .filter(agent => Date.now() - agent.discoveryTime < MAX_TIME);
 }
 
+/**
+ * Update the agents map with the new information
+ */
 const updateAgentsMap = async function updateAgentsMap() {
     return await new Promise(res => {
         client.onAgentsSensing(agents => {
             agents.forEach(agent => {
+                // Add the discovery time, to know when the agent was last seen
                 agent.discoveryTime = Date.now();
                 agentsMap.set(agent.id, agent);
             });
@@ -217,6 +236,8 @@ const getCells = function getCells(path) {
 }
 
 const usedPaths = new Map();
+const fixedIntentions = ['go_random', 'go_deliver'];
+
 export {
     distance,
     updateMe,
@@ -241,5 +262,6 @@ export {
     isCellReachable,
     logDebug,
     getCells,
-    usedPaths
+    usedPaths,
+    fixedIntentions
 };

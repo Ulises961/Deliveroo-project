@@ -118,7 +118,7 @@ function includesNeighbour(queue, neighbour) {
     return queue.some(cell => cell.x === neighbour.x && cell.y === neighbour.y);
 }
 
-class Cell {
+export class Cell {
     constructor(x, y) {
         this.x = x;
         this.y = y;
