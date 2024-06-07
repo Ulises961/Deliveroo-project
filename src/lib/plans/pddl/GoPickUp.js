@@ -1,8 +1,8 @@
-import Plan from '../Plan.js';
-import client from '../../utils/client.js';
-import { distance, me, deliveryPoints, parcels, carryParcel, logDebug, partner } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
-import { updateCarriedParcelsScore, computeParcelScore, blacklist } from '../AgentLoop.js';
+import client from '../../utils/client.js';
+import { carryParcel, distance, logDebug, me, parcels, partner, updateMe } from '../../utils/utils.js';
+import { blacklist, updateCarriedParcelsScore } from '../AgentLoop.js';
+import Plan from '../Plan.js';
 
 export default class GoPickUp extends Plan {
 
@@ -29,11 +29,12 @@ export default class GoPickUp extends Plan {
             try {
                 let response = await Promise.race([
                     client.ask(partner.id, JSON.stringify(question)),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
                 ])
-    
+
                 if (response === 'no') {
                     blacklist.push(predicate.id)
+                    parcels.delete(predicate.id)
                     agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
                     return false;
                 }
@@ -41,32 +42,40 @@ export default class GoPickUp extends Plan {
                 logDebug(3, 'GoPickUp.execute: no response from partner');
             }
         }
-        // Find path to the parcel
-        let path = await this.subIntention('find_path', [predicate.x, predicate.y]);
-        logDebug(0, 'GoPickUp.execute: path ', path);
 
-        // No path found, mark intention for deletion
-        if (path.length === 0) {
-            agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
-            throw ['No path found'];
+        if (predicate.x !== me.x || predicate.y !== me.y) {
+            // Find path to the parcel
+            let path = await this.subIntention('find_path', [predicate.x, predicate.y]);
+            logDebug(0, 'GoPickUp.execute: path ', path);
+
+            // No path found, mark intention for deletion
+            if (path.length === 0) {
+                agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+                throw ['No path found'];
+            }
+            
+                // Execute the path and pick up the parcel
+            let target = { x: predicate.x, y: predicate.y };
+            await this.subIntention('execute_path', [path, target]);
         }
 
-        // Execute the path and pick up the parcel
-        let target = {x: predicate.x, y: predicate.y};
-        await this.subIntention('execute_path', [path, target]);
+        if (me.x % 1 != 0 || me.y % 1 != 0)
+            await updateMe();
+
         let pickup = await client.pickup();
 
         // For each parcel picked up, carry it and mark the intention for deletion
         if (pickup.length > 0) {
-            pickup.forEach(parcel => {
-                carryParcel(parcel);
-                agent.changeIntentionScore('go_pick_up', [parcel], -1, parcel.id);
+            pickup.forEach(parcelInfo => {
+                let parcelId = parcelInfo.id
+                carryParcel(parcelInfo);
+                parcels.delete(parcelId);
+                agent.changeIntentionScore('go_pick_up', [], -1, parcelId);
             })
         }
 
-        if (this.stopped) throw ['stopped']; 
-
         updateCarriedParcelsScore();
+
 
         return true;
     }

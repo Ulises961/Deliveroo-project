@@ -20,7 +20,7 @@ export default class RandomMove extends Plan {
          * Choose a cell that is outside the observation range,
          * but not too far away
          */
-        const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE * 2;
+        const MAX_DISTANCE = configs.PARCELS_OBSERVATION_DISTANCE * 4;
 
         await new Promise(res => setImmediate(res));
         if (me.x % 1 != 0 || me.y % 1 != 0)
@@ -31,10 +31,13 @@ export default class RandomMove extends Plan {
                 return false;
             if (!cell.parcelSpawner)
                 return false;
+            if (distance(cell, me) > MAX_DISTANCE)
+                return false;
             return true;
         })
 
-        if (this.stopped) throw ['stopped']; 
+        if (this.stopped) 
+            return false; // if stopped then quit
         if (validDestinations.length === 0) {
             // I'm in the only parcel spawner? Stay here
             while (!this.stopped) {
@@ -59,7 +62,8 @@ export default class RandomMove extends Plan {
             throw ['no path found'];
         }
 
-        if (this.stopped) throw ['stopped']; 
+        if (this.stopped) 
+            return false; // if stopped then quit
 
         const complete = await this.subIntention('execute_path', [path, destination]);
         if (complete) {

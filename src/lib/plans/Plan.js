@@ -21,6 +21,10 @@ export default class Plan {
         return this.#name;
     }
 
+    get sub_intentions() {
+        return this.#sub_intentions;
+    }
+
     constructor(name) {
         this.#name = name;
     }

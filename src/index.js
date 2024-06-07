@@ -6,7 +6,7 @@ import {
 import { agent } from "./lib/utils/agent.js";
 import client, { askPartnerId, passOwnId } from './lib/utils/client.js';
 import { parcelsLoop } from './lib/plans/AgentLoop.js'
-import './lib/plans/other/Library.js'
+import './lib/plans/pddl/Library.js'
 
 /**
  * Belief revision function
@@ -63,20 +63,22 @@ updateAgentsMap();
 // Update the agent's information necessary to communicate with the partner
 await updateMe();
 
-const partnerName = GROUP[0] === client.name ? GROUP[1] : GROUP[0];
+if(GROUP.includes(client.name)) {
+    const partnerName = GROUP[0] === client.name ? GROUP[1] : GROUP[0];
+    // Both partners shout their names to each other only one hears the other. Then they communicate privately their ids
+    askPartnerId(partnerName);
+    
+    // Handshake with the partner
+    client.onMsg((id, name, msg) => {
+        if (name === partnerName && partner.id === null) {
+            partner.id = id;
+            partner.name = name;
+            passOwnId(id);
+            logDebug(2, `Received message from ${name} with id ${id}: ${msg}, partner id: ${partner.id}, partner name: ${partner.name}`);
+        }
+    });
+}
 
-// Both partners shout their names to each other only one hears the other. Then they communicate privately their ids
-askPartnerId(partnerName);
-
-// Handshake with the partner
-client.onMsg((id, name, msg) => {
-    if (name === partnerName && partner.id === null) {
-        partner.id = id;
-        partner.name = name;
-        passOwnId(id);
-        logDebug(2, `Received message from ${name} with id ${id}: ${msg}, partner id: ${partner.id}, partner name: ${partner.name}`);
-    }
-});
 
 
 /**

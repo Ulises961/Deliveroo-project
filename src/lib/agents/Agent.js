@@ -49,7 +49,7 @@ class Agent {
         if (currentIntention.id !== this.intention_queue[0].id && currentIntention.id === 'go_random') {
             // stop the last intention if the difference between the first one in the queue and the last intention is more than 10%
             if (currentIntention.score < this.intention_queue[0].score * 0.9) {
-                logDebug(3, 'Stopping intention', currentIntention.desire, currentIntention.score, 'because of new intention', this.intention_queue[0].desire, this.intention_queue[0].score);
+                logDebug(4, 'Stopping intention', currentIntention.desire, currentIntention.score, 'because of new intention', this.intention_queue[0].desire, this.intention_queue[0].score);
                 currentIntention.stop();
             }
         }

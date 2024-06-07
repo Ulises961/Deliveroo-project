@@ -35,6 +35,7 @@ const euclideanDistance = function distance({ x: x1, y: y1 }, { x: x2, y: y2 }) 
 const findClosestDelivery = function findClosestDelivery(exceptions = [], startingPoint) {
     let closestDelivery = { point: null, distance: Infinity };
     deliveryPoints
+        .filter(cell => isCellReachable(cell.x, cell.y))
         .filter(deliveryPoint => {
             return !exceptions.some(exception => deliveryPoint.x === exception?.x && deliveryPoint.y === exception?.y);
         }) // Filter out the exceptions
@@ -76,6 +77,12 @@ const MAX_NUM_MOVEMENT_RETRIES = 5;
 const updateMe = async function updateMe() {
     return await new Promise(res => {
         client.onYou(({ id, name, x, y, score }) => {
+
+            me.id = id
+            me.name = name
+            me.x = x
+            me.y = y
+            me.score = score
             /**
              * First time the agent receives the position
              */
@@ -118,12 +125,6 @@ const updateMe = async function updateMe() {
                 validCells.length = 0;
                 validCells.push(...newValidCells)
             }
-
-            me.id = id
-            me.name = name
-            me.x = x
-            me.y = y
-            me.score = score
             res(me);
         });
     })
@@ -148,6 +149,8 @@ const carriedParcels = [];
  * The carriedParcels array is used to compute the score for a delivery
  */
 const carryParcel = (parcel) => {
+    if (!parcel)
+        return;
     parcels.delete(parcel.id);
     if (carriedParcels.find(p => p.id === parcel.id)) {
         return;
@@ -185,6 +188,7 @@ const getAgentsMap = () => {
     // Only take agents that have been seen recently
     const MAX_TIME = 5000; // 5sec
     return Array.from(agentsMap.values())
+        .filter(agent => agent.name !== 'god')
         .filter(agent => Date.now() - agent.discoveryTime < MAX_TIME);
 }
 
@@ -205,7 +209,7 @@ const updateAgentsMap = async function updateAgentsMap() {
 };
 
 const partner = { id: null, name: null, position: null };
-const GROUP = ['ulises', 'lorenzo'];
+const GROUP = ['agent_1', 'agent_2'];
 
 const DEBUG = process.env.DEBUG === 'true' || false;
 const DEBUG_LEVEL = process.env.DEBUG_LEVEL || 0;
@@ -216,6 +220,22 @@ const logDebug = function logDebug(level, ...args) {
     }
 }
 
+const getCells = function getCells(path) {
+    return path.map(p => {
+        if(p.args) {
+            let planArgs = p.args;
+            planArgs = planArgs[2].split('_');
+            let x = parseInt(planArgs[0].substring(1));
+            let y = parseInt(planArgs[1]); 
+            return { x: x, y: y};
+        } else {
+            return p;
+        }
+
+    });
+}
+
+const usedPaths = new Map();
 const fixedIntentions = ['go_random', 'go_deliver'];
 
 export {
@@ -241,5 +261,7 @@ export {
     getAgentsMap,
     isCellReachable,
     logDebug,
+    getCells,
+    usedPaths,
     fixedIntentions
 };

@@ -1,85 +1,98 @@
 import { onlineSolver, Beliefset } from "@unitn-asa/pddl-client";
 import PddlProblem from "./PddlProblem.js";
-import { agentsMap, map, me, parcels, validCells, getAgentsMap, updateAgentsMap} from "../../utils/utils.js";
+import { partner, map, me, validCells, getAgentsMap, isCellReachable, logDebug, updateMe } from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';
+import { getDirection, isCellAdjacent } from "./GoPartnerUtils.js";
+
+let usedPaths = new Map();
+
 
 export default class PathFinder extends Plan {
+    domain = '';
+    
     constructor() {
         super('find_path');
+        this.domain = fs.readFileSync('./lib/plans/pddl/domain-path-find.pddl', 'utf-8');
     }
 
     isApplicableTo(desire) {
         return desire == 'find_path';
     }
 
-    readFile(path) {
-        return new Promise((res, rej) => {
-
-            fs.readFile(path, 'utf8', (err, data) => {
-                if (err) rej(err)
-                else res(data)
-            })
-        })
+    /**
+     * Parse the action to get the from and to cells
+     * @param {Object} action
+     * @returns {Object} { from: { x, y }, to: { x, y } }
+     */
+    parseAction(action) {
+        let args = action.args;
+        let firstX = args[1].split('_')[0].substring(1);
+        let firstY = args[1].split('_')[1];
+        let secondX = args[2].split('_')[0].substring(1);
+        let secondY = args[2].split('_')[1];
+        let from = { x: parseInt(firstX), y: parseInt(firstY) };
+        let to = { x: parseInt(secondX), y: parseInt(secondY) };
+        return { from, to };
     }
 
-    async execute(x, y) {
+    async execute(x, y, skipPartner) {
+        if (isCellAdjacent(me, { x, y })) {
+            let plan = [
+                { action: getDirection(me, { x, y }), 
+                    args: [
+                        'me',
+                        `t${me.x}_${me.y}`,
+                        `t${x}_${y}`
+                    ] }
+            ]
+            return plan;
+        }
 
-        // Problem
+        if(me.x %1 != 0 || me.y %1 != 0) {
+            await updateMe();
+        }
+
+        if(usedPaths.has(`${me.x} ${me.y} ${x} ${y}`)) {
+            const path = usedPaths.get(`${me.x} ${me.y} ${x} ${y}`);
+            logDebug(3, 'PathFinder: Reusing path', path, 'key', JSON.stringify([me.x, me.y, x, y]));
+            return path;
+        }
+        
+        /** Problem */
         const myBeliefset = new Beliefset();
+        let filteredCells = validCells
+            .filter(cell => !cell.fakeFloor)
+            .filter(cell => isCellReachable(cell.x, cell.y))
 
-        // Compute a subset of the map to reduce the planning complexity
-        let margin = 3;
-        let filteredCells = validCells.filter(cell => {
-            return (cell.x >= Math.min(me.x, x) - margin && cell.x <= Math.max(me.x, x) + margin) &&
-                (cell.y >= Math.min(me.y, y) - margin && cell.y <= Math.max(me.y, y) + margin);
-        });
-
-        // Declare the tiles
-        filteredCells
-            .forEach(tile => {
-                myBeliefset.declare(`tile t${tile.x}_${tile.y}`);
-                if (tile.delivery)
-                    myBeliefset.declare('delivery t' + x + '_' + y);
-                let right = tile.x < map.length - 1 && !map[tile.x + 1][tile.y].fakeFloor && !this.isAgentInCell(tile.x + 1, tile.y) ? map[tile.x + 1][tile.y] : null;
-                if (right) {
-                    myBeliefset.declare(`right t${tile.x}_${tile.y} t${right.x}_${right.y}`)
-                }
-                let left = tile.x > 0 && !map[tile.x - 1][tile.y].fakeFloor && !this.isAgentInCell(tile.x - 1, tile.y) ? map[tile.x - 1][tile.y] : null;
-                if (left) {
-                    myBeliefset.declare(`left t${tile.x}_${tile.y} t${left.x}_${left.y}`)
-                }
-                let up = tile.y < map[0].length - 1 && !map[tile.x][tile.y + 1].fakeFloor && !this.isAgentInCell(tile.x, tile.y + 1) ? map[tile.x][tile.y + 1] : null;
-                if (up) {
-                    myBeliefset.declare(`up t${tile.x}_${tile.y} t${up.x}_${up.y}`)
-                }
-                let down = tile.y > 0 && !map[tile.x][tile.y - 1].fakeFloor && !this.isAgentInCell(tile.x, tile.y - 1) ? map[tile.x][tile.y - 1] : null;
-                if (down) {
-                    myBeliefset.declare(`down t${tile.x}_${tile.y} t${down.x}_${down.y}`)
+        filteredCells.forEach(tile => {
+            let directions = [
+                { x: 1, y: 0, name: 'right' },
+                { x: 0, y: 1, name: 'down' }
+            ];
+            directions.forEach(dir => {
+                let newX = tile.x + dir.x;
+                let newY = tile.y + dir.y;
+                if (newX >= 0 && newX < map.length && newY >= 0 && newY < map[0].length && !map[newX][newY].fakeFloor && !this.isAgentInCell(newX, newY, skipPartner)) {
+                    let neighbor = map[newX][newY];
+                    myBeliefset.declare(`connected t${tile.x}_${tile.y} t${neighbor.x}_${neighbor.y}`);
                 }
             });
-
-        // Declare the agents
-        agentsMap.forEach(agent => {
-            myBeliefset.declare(`agent agent_${agent.id}`);
-            myBeliefset.declare(`at agent_${agent.id} t${Math.round(agent.x)}_${Math.round(agent.y)}`);
         });
 
-        // Declare the agent that is planning
+        getAgentsMap()
+            .filter(agent => agent.id !== me.id && // Skip itself
+                (!skipPartner || agent.id !== partner.id)) // If skipPartner is true, don't consider the partner
+            .forEach(agent => {
+                myBeliefset.declare(`occupied t${Math.ceil(agent.x)}_${Math.ceil(agent.y)}`);
+            });
+
+
+        if (me.x === null || me.y === null) 
+            return []
         myBeliefset.declare(`at me t${me.x}_${me.y}`);
         myBeliefset.declare(`me me`);
 
-        // Declare the parcels
-        parcels.forEach(parcel => {
-            myBeliefset.declare(`parcel t${parcel.x}_${parcel.y}`);
-            if (parcel.carriedBy) {
-                myBeliefset.declare(`not (free t${parcel.x}_${parcel.y})`);
-            } else {
-                myBeliefset.declare(`free t${parcel.x}_${parcel.y}`);
-            }
-        });
-
-        // Create the PDDL problem
         var pddlProblem = new PddlProblem(
             'path-finding',
             'path-find',
@@ -90,22 +103,40 @@ export default class PathFinder extends Plan {
 
         pddlProblem.goals = `at me t${x}_${y}`;
         let problem = pddlProblem.toPddlString();
-        let domain = await this.readFile('./lib/plans/pddl/domain-path-find.pddl');
+        let plan = await onlineSolver(this.domain, problem);
 
-        let plan = await onlineSolver(domain, problem);
-        
         if (!plan) {
             return [];
         }
+
+        // Set the direction for each move
+        plan.forEach(action => {
+            let parsedAction = this.parseAction(action);
+            let direction = getDirection(parsedAction.from, parsedAction.to)
+            action.action = direction;
+        });
+
+        usedPaths.set(`${me.x} ${me.y} ${x} ${y}`, plan);
+
+        // Save all the parts of the path in the usedPaths
+        for (let cell of plan) {
+            let parsedAction = this.parseAction(cell);
+            let key = `${parsedAction.from.x} ${parsedAction.from.y} ${parsedAction.to.x} ${parsedAction.to.y}`;
+            if (!usedPaths.has(key)) {
+                usedPaths.set(key, plan.slice(plan.indexOf(cell)));
+            }
+        }
         
-        return plan.map(p => p.action.toLowerCase());
+        return plan;
     }
 
     /**
      * Check if an agent is in a cell, in case avoid it!
      */
-        isAgentInCell(x, y) {
-            const isInCell = getAgentsMap().find(agent => agent.x === x && agent.y === y)
-            return !!isInCell;
-        }
+    isAgentInCell(x, y, skipPartner) {
+        const isInCell = getAgentsMap()
+            .filter(agent => !skipPartner || agent.id !== partner.id)
+            .find(agent => agent.x === x && agent.y === y)
+        return !!isInCell;
+    }
 }

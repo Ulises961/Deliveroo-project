@@ -1,5 +1,5 @@
 import Plan from '../Plan.js';
-import { me, map, euclideanDistance, getAgentsMap, validCells, updateAgentsMap, agentsMap } from '../../utils/utils.js';
+import { me, map, euclideanDistance, getAgentsMap, validCells, updateAgentsMap, agentsMap, partner } from '../../utils/utils.js';
 import client from '../../utils/client.js';
 
 export default class AStar extends Plan {
@@ -14,8 +14,10 @@ export default class AStar extends Plan {
     /**
      * Check if an agent is in a cell, in case avoid it!
      */
-    isAgentInCell(x, y) {
-        const isInCell = getAgentsMap().find(agent => agent.x === x && agent.y === y)
+    isAgentInCell(x, y, ignorePartner) {
+        const isInCell = getAgentsMap()
+            .filter(agent => !(ignorePartner && partner && agent.id === partner.id))
+            .find(agent => agent.x === x && agent.y === y)
         return !!isInCell;
     }
 
@@ -24,21 +26,21 @@ export default class AStar extends Plan {
      * @param {Cell} cell
      * @returns {Cell[]} - The neighbours of the cell
      */
-    getNeighbours(cell) {
+    getNeighbours(cell, ignorePartner) {
         let neighbours = []
         // Sometimes the map is not loaded yet
         if (map.length == 0)
         return []
-        if (cell.x > 0 && !map[cell.x - 1][cell.y].fakeFloor && !this.isAgentInCell(cell.x - 1, cell.y)) {
+        if (cell.x > 0 && !map[cell.x - 1][cell.y].fakeFloor && !this.isAgentInCell(cell.x - 1, cell.y, ignorePartner)) {
             neighbours.push(new Cell(cell.x - 1, cell.y))
         }
-        if (cell.x < map.length - 1 && !map[cell.x + 1][cell.y].fakeFloor && !this.isAgentInCell(cell.x + 1, cell.y)) {
+        if (cell.x < map.length - 1 && !map[cell.x + 1][cell.y].fakeFloor && !this.isAgentInCell(cell.x + 1, cell.y, ignorePartner)) {
             neighbours.push(new Cell(cell.x + 1, cell.y))
         }
-        if (cell.y > 0 && !map[cell.x][cell.y - 1].fakeFloor && !this.isAgentInCell(cell.x, cell.y - 1)) {
+        if (cell.y > 0 && !map[cell.x][cell.y - 1].fakeFloor && !this.isAgentInCell(cell.x, cell.y - 1, ignorePartner)) {
             neighbours.push(new Cell(cell.x, cell.y - 1))
         }
-        if (cell.y < map[0].length - 1 && !map[cell.x][cell.y + 1].fakeFloor && !this.isAgentInCell(cell.x, cell.y + 1)) {
+        if (cell.y < map[0].length - 1 && !map[cell.x][cell.y + 1].fakeFloor && !this.isAgentInCell(cell.x, cell.y + 1, ignorePartner)) {
             neighbours.push(new Cell(cell.x, cell.y + 1))
         }
 
@@ -62,7 +64,7 @@ export default class AStar extends Plan {
      * @param {number} x - The x coordinate of the destination
      * @param {number} y - The y coordinate of the destination
      */
-    async execute(x, y) {
+    async execute(x, y, ignorePartner = false) {
         let promise = new Promise(res => client.onYou(res))
         // Wait for the client to update the agent's position
         if (me.x % 1 != 0 || me.y % 1 != 0)
@@ -90,7 +92,7 @@ export default class AStar extends Plan {
             queue = queue.slice(1)
             closedSet.add(current.toString())
 
-            for (let neighbour of this.getNeighbours(current)) {
+            for (let neighbour of this.getNeighbours(current, ignorePartner)) {
                 let tentativeGScore = gScore.get(current) + 1
 
                 if (tentativeGScore < (gScore.get(neighbour) || Number.MAX_VALUE)) {

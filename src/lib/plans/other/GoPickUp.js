@@ -59,14 +59,21 @@ export default class GoPickUp extends Plan {
         path = path.reverse();
         path.shift();
         await this.subIntention('follow_path', [path]);
+
+        if (me.x % 1 != 0 || me.y % 1 != 0)
+            await client.onYou(res => res());
+        
         let pickup = await client.pickup();
 
         if (pickup.length > 0) {
-            pickup.forEach(parcel => {
-                carryParcel(parcel);
-                agent.changeIntentionScore('go_pick_up', [parcel], -1, parcel.id);
-            
+            pickup.forEach(parcelInfo => {
+                carryParcel(parcelInfo);
+                parcels.delete(parcelInfo.id);
+                agent.changeIntentionScore('go_pick_up', [], -1, parcelInfo.id);
             })
+        } else {
+            agent.changeIntentionScore('go_pick_up', [predicate], -1, predicate.id);
+            parcels.delete(predicate.id)
         }
 
         if (this.stopped) throw ['stopped']; // if stopped then quit
