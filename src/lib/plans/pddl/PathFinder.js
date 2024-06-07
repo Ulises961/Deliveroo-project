@@ -20,6 +20,22 @@ export default class PathFinder extends Plan {
         return desire == 'find_path';
     }
 
+    /**
+     * Parse the action to get the from and to cells
+     * @param {Object} action
+     * @returns {Object} { from: { x, y }, to: { x, y } }
+     */
+    parseAction(action) {
+        let args = action.args;
+        let firstX = args[1].split('_')[0].substring(1);
+        let firstY = args[1].split('_')[1];
+        let secondX = args[2].split('_')[0].substring(1);
+        let secondY = args[2].split('_')[1];
+        let from = { x: parseInt(firstX), y: parseInt(firstY) };
+        let to = { x: parseInt(secondX), y: parseInt(secondY) };
+        return { from, to };
+    }
+
     async execute(x, y, skipPartner) {
         if (isCellAdjacent(me, { x, y })) {
             let plan = [
@@ -95,16 +111,21 @@ export default class PathFinder extends Plan {
 
         // Set the direction for each move
         plan.forEach(action => {
-            let args = action.args;
-            let firstX = args[1].split('_')[0].substring(1);
-            let firstY = args[1].split('_')[1];
-            let secondX = args[2].split('_')[0].substring(1);
-            let secondY = args[2].split('_')[1];
-            let direction = getDirection({ x: parseInt(firstX), y: parseInt(firstY) }, { x: parseInt(secondX), y: parseInt(secondY) })
+            let parsedAction = this.parseAction(action);
+            let direction = getDirection(parsedAction.from, parsedAction.to)
             action.action = direction;
         });
 
         usedPaths.set(`${me.x} ${me.y} ${x} ${y}`, plan);
+
+        // Save all the parts of the path in the usedPaths
+        for (let cell of plan) {
+            let parsedAction = this.parseAction(cell);
+            let key = `${parsedAction.from.x} ${parsedAction.from.y} ${parsedAction.to.x} ${parsedAction.to.y}`;
+            if (!usedPaths.has(key)) {
+                usedPaths.set(key, plan.slice(plan.indexOf(cell)));
+            }
+        }
         
         return plan;
     }
