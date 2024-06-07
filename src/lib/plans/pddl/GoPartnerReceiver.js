@@ -43,21 +43,25 @@ export default class GoPartnerReceiver extends Plan {
         if (message.type === 'go_partner') {
             requestInProgress = true;
             let closestDelivery = findClosestDelivery([], me);
+            let actions = null;
+            let path = null;
 
-            let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, true]);
-            let path = getCells(actions);
+            if (me.x !== closestDelivery.point.x || me.y === closestDelivery.point.y) {
+                actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, true]);
+                path = getCells(actions);
 
-            logDebug(4, "[GoPartner] Found path to closest: ", path)
+                logDebug(4, "[GoPartner] Found path to closest: ", path)
 
-            // If there is no path to the delivery, failure!
-            if (!actions || actions.length == 0) {
-                reply(JSON.stringify({
-                    type: 'go_partner_response',
-                    success: false,
-                    position: me
-                }))
-                requestInProgress = false;
-                return false;
+                // If there is no path to the delivery, failure!
+                if (!actions || actions.length == 0) {
+                    reply(JSON.stringify({
+                        type: 'go_partner_response',
+                        success: false,
+                        position: me
+                    }))
+                    requestInProgress = false;
+                    return false;
+                }
             }
 
             let partnerLocation = message.position;
