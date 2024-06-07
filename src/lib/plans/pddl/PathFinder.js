@@ -42,12 +42,7 @@ export default class PathFinder extends Plan {
             logDebug(3, 'PathFinder: Reusing path', path, 'key', JSON.stringify([me.x, me.y, x, y]));
             return path;
         }
-
-        if(usedPaths.has(`${me.x} ${me.y} ${x} ${y}`)) {
-            const path = usedPaths.get(`${me.x} ${me.y} ${x} ${y}`);
-            logDebug(3, 'PathFinder: Reusing path', path, 'key', JSON.stringify([me.x, me.y, x, y]));
-            return path;
-        }
+        
         /** Problem */
         const myBeliefset = new Beliefset();
         let filteredCells = validCells
