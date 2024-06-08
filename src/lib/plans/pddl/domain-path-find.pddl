@@ -1,5 +1,5 @@
 (define (domain path-find)
-    (:requirements :strips :negative-preconditions)
+    (:requirements :strips :negative-preconditions :disjunctive-preconditions)
     (:predicates
         (at ?a ?t) ; agent at tile
         (connected ?t1 ?t2) ; tiles are connected

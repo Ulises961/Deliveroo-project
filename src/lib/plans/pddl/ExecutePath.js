@@ -1,7 +1,7 @@
-import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { me, parcels, updateMe, carryParcel, getAgentsMap, logDebug } from '../../utils/utils.js';
-import { agent } from '../../utils/agent.js';
+import { carryParcel, me, parcels } from '../../utils/utils.js';
+import Plan from '../Plan.js';
+import {agent} from '../../utils/agent.js';
 
 export default class ExecutePath extends Plan {
     constructor() {
