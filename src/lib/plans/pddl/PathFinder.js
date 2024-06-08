@@ -1,5 +1,6 @@
-import { onlineSolver, Beliefset } from "@unitn-asa/pddl-client";
+import onlineSolver from "./OnlinePlanner.js";
 import PddlProblem from "./PddlProblem.js";
+import Beliefset from "@unitn-asa/pddl-client/src/Beliefset.js";
 import { partner, map, me, validCells, getAgentsMap, isCellReachable, logDebug, updateMe } from "../../utils/utils.js";
 import Plan from "../Plan.js";
 import fs from 'fs';

@@ -46,8 +46,10 @@ export default class GoPartnerInitiator extends Plan {
             let moved = false;
             let parcelsDown = false;
             let freeCell = null;
-            if (!midPoint)
+            if (!midPoint) {
                 reply(JSON.stringify({ success: false, position: me }));
+                return false;
+            }
             if (midPoint.x != me.x || midPoint.y != me.y) {
                 let previousPosition = { x: me.x, y: me.y };
                 direction = getDirection(me, midPoint);
