@@ -1,22 +1,19 @@
 import Plan from '../Plan.js';
 import client from '../../utils/client.js';
-import { agentsMap, me, parcels, updateMe, carryParcel, getAgentsMap, partner, logDebug, map, carriedParcels, findClosestDelivery } from '../../utils/utils.js';
+import { getCells, me, updateMe, partner, logDebug, findClosestDelivery, distance, map } from '../../utils/utils.js';
 import { agent } from '../../utils/agent.js';
 import { blacklist } from '../AgentLoop.js'
-import { isCellAdjacent, goToMidPoint, askResponse } from './GoPartnerUtils.js';
+import { isCellAdjacent, goToMidPoint, askResponse, takeStepBack, getDirection } from './GoPartnerUtils.js';
+
+let requestInProgress = false;
 
 export default class GoPartnerReceiver extends Plan {
     // Variable used to know in the listener if the agent has finished the go_partner plan
-    amAtMidPoint = false;
     goPartnerDone = false;
-    planInstance = this;
-    isRequestInProcess = false;
 
     constructor() {
         super('go_partner_receiver');
         client.socket.on('msg', this.onMsg.bind(this));
-        this.amAtMidPoint = false;
-        this.goPartnerDone = false;
     }
 
     async onMsg(id, name, messageString, reply) {
@@ -32,158 +29,111 @@ export default class GoPartnerReceiver extends Plan {
         }
 
         // The message types that are accepted by this listener
-        let messageTypes = ['go_partner', 'go_partner_abort', 'go_partner_ready', 'go_partner_done'];
+        let messageTypes = ['go_partner', 'go_partner_abort'];
 
         if (!messageTypes.includes(message.type))
             return;
 
+        if (requestInProgress || agent.intention_queue[0].id === 'go_deliver') {
+            reply(JSON.stringify({ success: false, position: me }));
+            return false;
+        }
+
         // The message is to coordinate on the delivery
         if (message.type === 'go_partner') {
-            // if (this.isRequestInProcess)
-            //     return;
-            // this.isRequestInProcess = true;
-            // let prioritizedPlans = ['go_partner_receiver', 'go_partner_initiator', 'go_deliver'];
-            // if (prioritizedPlans.includes(agent.intention_queue[0].id)) {
-            //     this.isRequestInProcess = false;
-            //     reply(JSON.stringify({
-            //         type: 'go_partner_response',
-            //         success: false,
-            //         position: me
-            //     }))
-            //     return false;
-            // }
+            requestInProgress = true;
             let closestDelivery = findClosestDelivery([], me);
+            let actions = null;
+            let path = null;
 
-            let path = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y, false]);
+            if (me.x !== closestDelivery.point.x || me.y === closestDelivery.point.y) {
+                actions = await this.subIntention('a_star', [closestDelivery.point.x, closestDelivery.point.y, true]);
 
-            logDebug(4, "[GoPartner] Found path to closest: ", path)
+                logDebug(4, "[GoPartner] Found path to closest: ", actions)
 
-            // If there is no path to the delivery, failure!
-            if (!path || path.length == 0) {
-                this.isRequestInProcess = true;
-                reply(JSON.stringify({
-                    type: 'go_partner_response',
-                    success: false,
-                    position: me
-                }))
-                return false;
+                // If there is no path to the delivery, failure!
+                if (!actions || actions.length == 0) {
+                    reply(JSON.stringify({
+                        type: 'go_partner_response',
+                        success: false,
+                        position: me
+                    }))
+                    requestInProgress = false;
+                    return false;
+                }
             }
 
             let partnerLocation = message.position;
+            let midPoint = null;
 
             if (isCellAdjacent(me, partnerLocation)) {
                 logDebug(4, "[GoPartner2] I'm already beside the partner")
-                this.isRequestInProcess = true;
-                reply(JSON.stringify({
-                    type: 'go_partner_response',
-                    x: partnerLocation.x,
-                    y: partnerLocation.y,
-                    position: me,
-                    success: true,
-                }))
-                // this.stop();
-                agent.push({ desire: 'go_partner_receiver', args: [{ x: me.x, y: me.y, position: partnerLocation }], score: 9999, id: 'go_partner_receiver' });
-                return true;
+                let previousPosition = { x: me.x, y: me.y };
+                let stepBack = await takeStepBack(this, partnerLocation);
+                if (!stepBack)
+                    midPoint = partnerLocation;
+                else
+                    midPoint = previousPosition;
+            } else {
+                // Find a path from me to the other agent
+                let retries = 0;
+                let MAX_NUM_MOVEMENT_RETRIES = 3;
+                do {
+                    actions = await this.subIntention('a_star', [partnerLocation.x, partnerLocation.y, true]);
+                } while (actions.length == 0 && retries++ < MAX_NUM_MOVEMENT_RETRIES)
+
+                if (actions.length == 0) {
+                    logDebug(4, "[GoPartner2] Could not find path to partner!")
+                    reply(JSON.stringify({ success: false, position: me }));
+                    requestInProgress = false;
+                    return false;
+                }
+
+                actions.pop(); // Remove the last action, which is the partner's position
+                midPoint = actions.pop(); // Remove the position just before the other agent, to leave space for the parcels
+
+                logDebug(4, "[GoPartner3] Path to partner: ", actions)
+
+                let pathCompleted = await this.subIntention('follow_path', [actions, partnerLocation]);
             }
 
-            // Find a path from me to the other agent
-            path = await this.subIntention('a_star', [partnerLocation.x, partnerLocation.y]);
+            let response = await client.ask(partner.id, JSON.stringify({ type: 'go_partner_ready', position: me, midPoint: midPoint }))
+            response = JSON.parse(response);
 
-            logDebug(4, "[GoPartner3] Path to partner: ", path)
-
-            // If no path is found, failure!
-            if (!path || path.length == 0) {
-                this.isRequestInProcess = true;
-                reply(JSON.stringify({
-                    type: 'go_partner_response',
-                    success: false,
-                    position: me
-                }))
+            if (!response.success) {
+                reply(JSON.stringify({ success: false, position: me }));
+                requestInProgress = false;
                 return false;
             }
 
-            // Usual reversal of the path (from me to him), then remove current location
-            if (path.length > 1) {
-                path.reverse();
-                path.shift();
+            if (!midPoint) {
+                reply(JSON.stringify({ success: false, position: me }));
+                requestInProgress = false;
+                return false;
+            }
+            let direction = getDirection(me, midPoint);
+            let moved = await client.move(direction)
+
+            if (!moved) {
+                reply(JSON.stringify({ success: false, position: me }));
+                requestInProgress = false;
+                return false;
             }
 
-            if (path.length <= 1) {
-                // If the agent is already at the partner's location, success!
-                this.isRequestInProcess = true;
-                reply(JSON.stringify({
-                    type: 'go_partner_response',
-                    x: path[0].x,
-                    y: path[0].y,
-                    position: me,
-                    success: true,
-                }))
-                agent.push({ desire: 'go_partner_receiver', args: [{ x: me.x, y: me.y, position: path[0] }], score: 9999, id: 'go_partner_receiver' });
-                return true;
-            }
+            let pickup = await client.pickup();
+            logDebug(4, 'Parcel picked up!', pickup)
 
-            // Otherwise, find the mid point of the path and send it to the partner, then follow the path
-            let partnerMidPoint = path[Math.floor(path.length / 2)];
-            let myMidPoint = path[Math.floor(path.length / 2) - 1];
-            this.isRequestInProcess = true;
+            agent.changeIntentionScore('go_deliver', [], 99999, 'go_deliver')
+
             reply(JSON.stringify({
                 type: 'go_partner_response',
-                x: partnerMidPoint.x,
-                y: partnerMidPoint.y,
-                success: true,
-                position: me
+                position: me,
+                success: true
             }))
-            agent.push({ desire: 'go_partner_receiver', args: [{ x: myMidPoint.x, y: myMidPoint.x, position: partnerMidPoint }], score: 9999, id: 'go_partner_receiver' });
+            requestInProgress = false;
         } else if (message.type == 'go_partner_abort') {
             // The partner has aborted the plan
             agent.changeIntentionScore('go_partner', [message.position], -1, 'go_partner');
-        } else if (message.type == 'go_partner_ready') {
-            // The partner is ready to meet at the mid point
-            setTimeout(() => {
-                if (!this.goPartnerDone) {
-                    this.stop();
-                    client.say(partner.id, JSON.stringify({
-                        type: 'go_partner_abort',
-                        position: me
-                    }))
-                    agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
-                }
-            }, 2000)
-            while (!this.amAtMidPoint) {
-                if (this.stopped)
-                    return;
-                await new Promise(resolve => setTimeout(resolve, 100));
-                await new Promise(res => setImmediate(res));
-            }
-
-            reply(JSON.stringify({
-                type: 'go_partner_ready_response',
-                position: me
-            }))
-        } else if (message.type == 'go_partner_done') {
-            // The partner is ready to meet at the mid point
-            setTimeout(() => {
-                if (!this.goPartnerDone) {
-                    this.stop();
-                    client.say(partner.id, JSON.stringify({
-                        type: 'go_partner_abort',
-                        position: me
-                    }))
-                    agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
-                }
-            }, 2000)
-
-            while (!this.goPartnerDone) {
-                if (this.stopped)
-                    return;
-                await new Promise(resolve => setTimeout(resolve, 100));
-                await new Promise(res => setImmediate(res));
-            }
-
-            reply(JSON.stringify({
-                type: 'go_partner_done_response',
-                position: me
-            }))
         }
     }
 
@@ -203,75 +153,6 @@ export default class GoPartnerReceiver extends Plan {
      * @param {boolean} initiator
      */
     async execute(midPoint, initiator) {
-        this.amAtMidPoint = false;
-        this.goPartnerDone = false;
-        this.stopped = false;
-        let partnerLocation = midPoint.position
 
-        logDebug(4, 'Starting GoPartner!', midPoint, initiator)
-
-        let pathCompleted = await goToMidPoint(midPoint, 'go_partner_receiver', this);
-
-        if (!pathCompleted) {
-            this.stop();
-            return false;
-        }
-
-        if (this.stopped)
-            return false;
-
-        // Modify the variable, so the listener knows the agent is at the mid point
-        this.amAtMidPoint = true;
-
-        logDebug(4, 'At mid point!')
-
-        // The other agent needs to move one step, then get the parcels
-        let proceedResponse = await askResponse({ type: 'go_partner_proceed', position: me }, this)
-
-        if (!proceedResponse) {
-            agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
-            this.stop();
-            return false;
-        }
-
-        if (this.stopped)
-            return false;
-
-        pathCompleted = await this.subIntention('follow_path', [[{ x: partnerLocation.x, y: partnerLocation.y }]]);
-
-        logDebug(4, 'Path completed!')
-
-        if (me.x % 1 != 0 || me.y % 1 != 0)
-            await updateMe();
-
-        // if (this.stopped)
-        //     return false;
-
-        logDebug(4, 'Me updated!')
-
-        let pickup = await client.pickup();
-        logDebug(4, 'Parcel picked up!', pickup)
-
-        // if (pickup.length < 1) {
-        //     logDebug(4, 'Didn\' pick up any parcel!!!!');
-        //     await client.say(partner.id, JSON.stringify({
-        //         type: 'go_partner_abort',
-        //         position: me
-        //     }))
-        //     agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver')
-        //     return false;
-        // }
-
-        // if (this.stopped)
-        //     return false;
-
-        logDebug(4, 'Done!')
-        this.goPartnerDone = true;
-
-        let delivery = await this.subIntention('go_deliver', []);
-
-        agent.changeIntentionScore('go_partner_receiver', [], -1, 'go_partner_receiver');
-
-        return true;
     }
 }

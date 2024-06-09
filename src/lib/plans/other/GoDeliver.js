@@ -158,10 +158,10 @@ export default class GoDeliver extends Plan {
                     if (!midPointMessage.success) {
                         logDebug(4, 'GoDeliver.execute: partner rejected meeting');
                         this.stop();
-                        throw ['partner rejected meeting'];
+                        return false;
                     }
 
-                    agent.push({ desire: 'go_partner_initiator', args: [midPointMessage], score: 9999, id: 'go_partner_initiator' }) // Always prioritize the meeting
+                    // agent.push({ desire: 'go_partner_initiator', args: [midPointMessage], score: 9999, id: 'go_partner_initiator' }) // Always prioritize the meeting
                     // this.stop();
                     return;
                 }
