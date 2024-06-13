@@ -31,8 +31,8 @@ export default class RandomMove extends Plan {
                 return false;
             if (!cell.parcelSpawner)
                 return false;
-            if (distance(cell, me) > MAX_DISTANCE)
-                return false;
+            // if (distance(cell, me) > MAX_DISTANCE)
+            //     return false;
             return true;
         })
 
