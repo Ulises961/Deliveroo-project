@@ -39,7 +39,7 @@ Insert the configuration options:
 
     `import './lib/plans/other/Library.js'`: for A*
 
-    `import './lib/plans/other/Library.js'`: for PDDL planner.
+    `import './lib/plans/pddl/Library.js'`: for PDDL planner.
 
 * To use the planner, you need to add the following line to the `.env`:
   
