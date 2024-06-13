@@ -43,7 +43,7 @@ Insert the configuration options:
 
 * To use the planner, you need to add the following line to the `.env`:
   
-    `PAAS_PATH='/package/dual-bfws-ffparser/solve'`
+    `PAAS_PATH='/package/lama-first/solve'`
   
 * If you are hosting the [planner yourself](https://github.com/AI-Planning/planning-as-a-service), set the planner's URL in the `.env`:
 
