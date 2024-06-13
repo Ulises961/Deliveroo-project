@@ -76,6 +76,7 @@ export default class GoPartnerReceiver extends Plan {
                 else
                     midPoint = previousPosition;
             } else {
+                logDebug(4, "Partner's position: ", partnerLocation)
                 // Find a path from me to the other agent
                 let retries = 0;
                 let MAX_NUM_MOVEMENT_RETRIES = 3;
@@ -93,10 +94,13 @@ export default class GoPartnerReceiver extends Plan {
                 actions.pop(); // Remove the last action, which is the partner's position
                 midPoint = actions.pop(); // Remove the position just before the other agent, to leave space for the parcels
 
-                logDebug(4, "[GoPartner3] Path to partner: ", path)
+                midPoint = getCells([midPoint])[0];
+                logDebug(4, "[GoPartner3] Path to partner: ", actions)
 
                 let pathCompleted = await this.subIntention('execute_path', [actions, partnerLocation]);
             }
+
+            logDebug(4, "[GoPartner4] Now in position")
 
             let response = await client.ask(partner.id, JSON.stringify({ type: 'go_partner_ready', position: me, midPoint: midPoint }))
             response = JSON.parse(response);

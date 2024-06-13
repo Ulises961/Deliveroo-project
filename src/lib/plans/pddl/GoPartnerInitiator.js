@@ -40,6 +40,7 @@ export default class GoPartnerInitiator extends Plan {
             agent.changeIntentionScore('go_partner_initiator', [message.position], -1, 'go_partner_initiator');
             this.stop();
         } else if (message.type == 'go_partner_ready') {
+            logDebug(4, "[GoPartner] Received go_partner_ready message: ", message)
             // The partner is ready to meet at the mid point
             let midPoint = message.midPoint;
             let direction = null;
@@ -64,7 +65,7 @@ export default class GoPartnerInitiator extends Plan {
                 moved = await client.move(direction);
             }
             carriedParcels.length = 0;
-            agent.changeIntentionScore('go_deliver', [], -1, 'go_deliver');
+            agent.changeIntentionScore('go_deliver', [true], -1, 'go_deliver');
             reply(JSON.stringify({
                 type: 'go_partner_ready_response',
                 success: moved && parcelsDown,

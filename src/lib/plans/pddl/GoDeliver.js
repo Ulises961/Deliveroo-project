@@ -62,10 +62,12 @@ export default class GoDeliver extends Plan {
         return isWidthOne;
     }
 
-    async execute(predicate) {
+    async execute(isGoPartner) {
         this.stopped = false;
         let closestDelivery = findClosestDelivery([], me);
         let retries = 0;
+        if (isGoPartner === true)
+            retries = -2;
         const MAX_RETRIES = 2;
 
         const triedDeliveryPoints = [closestDelivery.point];
@@ -118,6 +120,9 @@ export default class GoDeliver extends Plan {
             }
         }
 
+        if (isGoPartner === true)
+            return false;
+
         closestDelivery = findClosestDelivery([], me);
 
         let actions = await this.subIntention('find_path', [closestDelivery.point.x, closestDelivery.point.y, false]);
@@ -134,9 +139,13 @@ export default class GoDeliver extends Plan {
 
             logDebug(4, 'Min width: ', this.minWidthInPathIsOne(path), ' partner: ', partner.id);
 
-            if (this.minWidthInPathIsOne(path) && partner) {
+            if (this.minWidthInPathIsOne(path) && partner && partner.id) {
                 logDebug(4, 'GoDeliver.execute: partner is closer to delivery point, trying to meet')
-                let midPointMessage = await client.ask(partner.id, JSON.stringify({ type: 'go_partner', position: me }))
+                let midPointMessage = await Promise.race([
+                    client.ask(partner.id, JSON.stringify({ type: 'go_partner', position: me })),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000))
+                ])
+
                 midPointMessage = JSON.parse(midPointMessage)
 
                 logDebug(4, 'GoDeliver.execute: partner response', midPointMessage)

@@ -60,8 +60,8 @@ export default class ExecutePath extends Plan {
             if (!moved) {
                 retries++;
                 // Re-compute path
-                let actions = await this.subIntention('find_path', [target.x, target.y])
-                path = actions.map(p => p.action.toLowerCase());
+                // let actions = await this.subIntention('find_path', [target.x, target.y])
+                // path = actions.map(p => p.action.toLowerCase());
             }
         }
 

@@ -332,7 +332,7 @@ client.onMsg((id, name, msg, reply) => {
 
             let parcelId = message.parcel.id
             blacklist.push(parcelId)
-            updateIntentionScore(null, -1, parcelId)
+            updateIntentionScore(null, -100, parcelId)
             if (parcels.has(parcelId)) {
                 parcels.delete(parcelId)
             }
