@@ -48,8 +48,19 @@ export async function takeStepBack(planInstance, midPoint) {
         direction = 'down'
     else if (stepBackPos[0].y > me.y)
         direction = 'up'
-    // await planInstance.subIntention('execute_path', [[{action: direction}], stepBackPos[0]]);
-    return await client.move(direction)
+    logDebug(4, 'Step back direction: ', direction)
+    let retries = 0
+    const MAX_RETRIES = 5
+    while (retries < MAX_RETRIES) {
+        if (await client.move(direction))
+            return true;
+        retries++;
+        await new Promise(res => setImmediate(res));
+        if (me.x % 1 != 0 || me.y % 1 != 0)
+            await updateMe();
+        await new Promise(res => setTimeout(res, 20));
+    }
+    return retries < MAX_RETRIES;
 }
 
 /**

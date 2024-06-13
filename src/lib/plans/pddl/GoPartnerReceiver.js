@@ -71,6 +71,7 @@ export default class GoPartnerReceiver extends Plan {
                 logDebug(4, "[GoPartner2] I'm already beside the partner")
                 let previousPosition = { x: me.x, y: me.y };
                 let stepBack = await takeStepBack(this, partnerLocation);
+                logDebug(4, "[GoPartner2] Step back: ", stepBack)
                 if (!stepBack)
                     midPoint = partnerLocation;
                 else
